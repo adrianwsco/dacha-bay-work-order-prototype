@@ -1,0 +1,3949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order Prototype v7 — Dacha Bay Wind Farm</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #22c1c3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; }
+
+        .screen {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            color: white;
+            padding: 24px;
+        }
+
+        .header h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+        .header .subtitle { font-size: 14px; opacity: 0.9; }
+
+        .content { padding: 24px; }
+
+        /* Work order list cards */
+        .work-order-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .work-order-card:hover {
+            border-color: #22c1c3;
+            box-shadow: 0 4px 12px rgba(34, 193, 195, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .work-order-card.inactive {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .work-order-card.inactive:hover {
+            border-color: #e2e8f0;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .work-order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .wo-number { font-size: 18px; font-weight: 600; color: #2d3748; }
+
+        /* Status badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-in-progress { background: #fef3c7; color: #92400e; }
+        .status-assigned { background: #dbeafe; color: #1e40af; }
+        .status-complete { background: #d1fae5; color: #065f46; }
+        .status-awaiting-parts { background: #fed7aa; color: #9a3412; }
+        .status-escalated { background: #fce7f3; color: #9d174d; }
+
+        .work-order-details {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+
+        .detail-item { display: flex; align-items: center; gap: 6px; }
+
+        /* Turbine metadata strip */
+        .turbine-meta {
+            display: flex;
+            gap: 24px;
+            padding: 14px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .meta-item { display: flex; flex-direction: column; gap: 2px; }
+
+        .meta-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .meta-value { font-size: 13px; color: #2d3748; font-weight: 500; }
+
+        /* Back button */
+        .back-button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover { background: rgba(255,255,255,0.3); }
+
+        .detail-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 16px;
+        }
+
+        .turbine-info { font-size: 14px; opacity: 0.9; margin-top: 8px; }
+
+        /* Form sections */
+        .section { margin-bottom: 32px; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item.complete { border-color: #10b981; background: #f0fdf4; }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #10b981;
+        }
+
+        .checkbox-item label { flex: 1; cursor: pointer; font-size: 15px; color: #2d3748; }
+
+        .blade-assessment {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .blade-assessment.complete { border-color: #10b981; background: #f0fdf4; }
+
+        .blade-title { font-weight: 600; color: #2d3748; margin-bottom: 12px; font-size: 16px; }
+
+        .form-group { margin-bottom: 12px; }
+
+        .form-label { display: block; font-size: 14px; color: #64748b; margin-bottom: 6px; }
+
+        select, input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        textarea { resize: vertical; min-height: 100px; }
+
+        select:focus, input[type="number"]:focus, textarea:focus {
+            outline: none;
+            border-color: #22c1c3;
+        }
+
+        .notes-container {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .notes-container.complete { border-color: #10b981; background: #f0fdf4; }
+
+        /* Progress bar */
+        .progress-bar {
+            background: #f1f5f9;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #10b981 0%, #22c1c3 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 16px; }
+
+        /* Buttons */
+        .submit-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981 0%, #22c1c3 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 24px;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 193, 195, 0.4);
+        }
+
+        .submit-button:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .button-group { display: flex; gap: 12px; margin-top: 24px; }
+
+        .button-secondary {
+            flex: 1;
+            padding: 16px;
+            background: white;
+            color: #2d3748;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .button-secondary:hover { border-color: #22c1c3; color: #22c1c3; }
+
+        /* Review screens */
+        .review-section {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .review-title { font-weight: 600; color: #2d3748; margin-bottom: 12px; }
+
+        .review-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .review-item:last-child { border-bottom: none; }
+        .review-label { color: #64748b; font-size: 14px; }
+        .review-value { color: #2d3748; font-weight: 500; font-size: 14px; }
+
+        .review-notes {
+            margin-top: 8px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2d3748;
+            line-height: 1.5;
+        }
+
+        /* Confirmation screen */
+        .confirmation-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981 0%, #22c1c3 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 48px;
+        }
+
+        .confirmation-message { text-align: center; margin-bottom: 32px; }
+
+        .confirmation-message h2 { font-size: 24px; color: #2d3748; margin-bottom: 8px; }
+        .confirmation-message p { color: #64748b; font-size: 16px; }
+
+        /* AI elements */
+        .ai-generate-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ai-generate-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-generate-button:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
+
+        .ai-status {
+            font-size: 13px;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 8px;
+            min-height: 20px;
+            font-style: italic;
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: 0.5px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .ai-loading { animation: pulse 1.2s ease-in-out infinite; }
+
+        /* List header with count */
+        .list-header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .wo-count {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .work-order-details { flex-direction: column; gap: 8px; }
+            .detail-header-info { flex-direction: column; }
+            .button-group { flex-direction: column; }
+            .turbine-meta { gap: 16px; }
+        }
+
+        /* =============================================
+           PHASE 3 — CAT 5 ESCALATION EMAIL PANEL
+           ============================================= */
+
+        .cat5-email-panel {
+            background: #fff1f2;
+            border: 2px solid #fecdd3;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .cat5-email-panel.sending {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .cat5-email-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .cat5-email-icon { font-size: 20px; flex-shrink: 0; }
+
+        .cat5-email-header-text { flex: 1; }
+
+        .cat5-email-title {
+            font-weight: 700;
+            color: #be123c;
+            font-size: 15px;
+        }
+
+        .cat5-email-panel.sending .cat5-email-title { color: #64748b; }
+
+        .cat5-email-to {
+            font-size: 12px;
+            color: #9f1239;
+            margin-top: 2px;
+        }
+
+        .cat5-email-panel.sending .cat5-email-to { color: #94a3b8; }
+
+        .cat5-status-badge {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #fce7f3;
+            color: #9d174d;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .cat5-status-badge.sent {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .cat5-status-badge.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .cat5-email-subject-row {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            margin-bottom: 10px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .cat5-email-meta-label {
+            font-weight: 700;
+            color: #be123c;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .cat5-email-panel.sending .cat5-email-meta-label { color: #64748b; }
+
+        .cat5-email-subject-text {
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .cat5-email-preview {
+            background: white;
+            border: 1px solid #fecdd3;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 130px;
+            overflow-y: auto;
+        }
+
+        .cat5-email-panel.sending .cat5-email-preview {
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* =============================================
+           PHASE 2 — MANAGER VIEW STYLES
+           ============================================= */
+
+        /* Role toggle bar */
+        .role-toggle-bar {
+            display: flex;
+            gap: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+            margin-bottom: 16px;
+            width: fit-content;
+        }
+
+        .role-toggle-btn {
+            padding: 8px 18px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .role-toggle-btn.active {
+            background: rgba(255,255,255,0.92);
+            color: #1a365d;
+        }
+
+        .role-toggle-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Escalation banner */
+        .escalation-banner {
+            background: #fff1f2;
+            border: 2px solid #fecdd3;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .escalation-banner:hover {
+            border-color: #f43f5e;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .escalation-icon { font-size: 22px; }
+        .escalation-text { flex: 1; }
+
+        .escalation-title {
+            font-weight: 700;
+            color: #be123c;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .escalation-detail { font-size: 13px; color: #9f1239; }
+
+        .escalation-cta {
+            font-size: 13px;
+            font-weight: 700;
+            color: #be123c;
+            white-space: nowrap;
+        }
+
+        /* Manager stats row */
+        .stats-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+        .stat-pill.stat-escalated  { background: #fce7f3; color: #9d174d; }
+        .stat-pill.stat-in-progress { background: #fef3c7; color: #92400e; }
+        .stat-pill.stat-complete   { background: #d1fae5; color: #065f46; }
+
+        /* Manager section label */
+        .manager-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        /* Escalated card styling */
+        .work-order-card.escalated-card {
+            border-color: #fecdd3;
+            background: linear-gradient(135deg, #fff9f9 0%, #fff 100%);
+        }
+
+        .work-order-card.escalated-card:hover {
+            border-color: #f43f5e;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
+        }
+
+        /* Manager detail — read-only banner */
+        .read-only-banner {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 9px 14px;
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Manager escalation alert block */
+        .manager-escalation-alert {
+            background: #fff1f2;
+            border: 2px solid #f43f5e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .manager-escalation-alert-title {
+            font-weight: 700;
+            color: #be123c;
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .manager-escalation-alert-detail {
+            color: #9f1239;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        /* Submission metadata strip */
+        .submission-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 20px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .submission-meta strong { color: #2d3748; }
+
+        /* Data groups */
+        .detail-data-group { margin-bottom: 24px; }
+
+        .detail-data-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .detail-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+
+        .detail-data-row:last-child { border-bottom: none; }
+        .detail-data-row-label { color: #64748b; }
+        .detail-data-row-value { color: #2d3748; font-weight: 500; text-align: right; }
+        .detail-data-row-value.urgent { color: #be123c; font-weight: 700; }
+        .detail-data-row-value.pending { color: #94a3b8; font-weight: 400; font-style: italic; }
+
+        /* Field notes box */
+        .detail-notes-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 14px;
+            color: #2d3748;
+            line-height: 1.65;
+        }
+
+        /* Pending/not started state */
+        .pending-indicator {
+            background: #f8fafc;
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Parts request */
+        .parts-request-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: #92400e;
+            margin-top: 12px;
+        }
+
+        .parts-request-box strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* =============================================
+           PHASE 2.5 — PHOTO UPLOAD & AI VISION
+           ============================================= */
+
+        .photo-upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fafbfc;
+        }
+
+        .photo-upload-zone:hover {
+            border-color: #667eea;
+            background: #f5f3ff;
+        }
+
+        .photo-upload-zone.has-photo {
+            border-style: solid;
+            border-color: #c7d2fe;
+            background: #f5f3ff;
+            cursor: default;
+        }
+
+        .photo-upload-zone.analysing {
+            border-color: #667eea;
+            background: #f5f3ff;
+            cursor: default;
+        }
+
+        .photo-upload-icon { font-size: 22px; flex-shrink: 0; }
+
+        .photo-upload-text { flex: 1; }
+
+        .photo-upload-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .photo-upload-sublabel {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .photo-thumbnail {
+            width: 52px;
+            height: 52px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 2px solid #c7d2fe;
+            flex-shrink: 0;
+        }
+
+        .photo-change-btn {
+            font-size: 12px;
+            color: #667eea;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            font-family: inherit;
+        }
+
+        /* Hidden file input */
+        .photo-file-input { display: none; }
+
+        /* AI suggestion box below the category select */
+        .ai-suggestion-box {
+            background: linear-gradient(135deg, #f0ebff 0%, #ede9fe 100%);
+            border: 1px solid #c4b5fd;
+            border-radius: 7px;
+            padding: 10px 12px;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #4c1d95;
+            line-height: 1.55;
+            display: none;
+        }
+
+        .ai-suggestion-box.visible { display: block; }
+
+        .ai-suggestion-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            color: #6d28d9;
+        }
+
+        .ai-suggested-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .ai-modified-badge {
+            display: inline-block;
+            background: #64748b;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .vision-analysing {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #667eea;
+            font-style: italic;
+            padding: 6px 0;
+        }
+
+        /* Drive storage status row */
+        .drive-status { font-size: 12px; padding: 4px 0 2px; min-height: 20px; }
+        .drive-saving  { color: #94a3b8; font-style: italic; }
+        .drive-saved-link { color: #10b981; text-decoration: none; font-weight: 500; }
+        .drive-saved-link:hover { text-decoration: underline; }
+        .drive-error   { color: #e53e3e; font-style: italic; }
+        .drive-confirm-link {
+            display: inline-block; margin-top: 8px;
+            color: #10b981; text-decoration: none; font-size: 14px; font-weight: 500;
+        }
+        .drive-confirm-link:hover { text-decoration: underline; }
+
+        /* =============================================
+           PHASE 4 — AI TRIAGE & PRIORITIZATION
+           ============================================= */
+
+        /* Priority badges */
+        .priority-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            margin-left: 8px;
+            vertical-align: middle;
+            letter-spacing: 0.3px;
+        }
+        .priority-p1 { background: #fee2e2; color: #991b1b; }
+        .priority-p2 { background: #fed7aa; color: #9a3412; }
+        .priority-p3 { background: #fef3c7; color: #92400e; }
+        .priority-p4 { background: #f1f5f9; color: #475569; }
+
+        /* Triage rationale line under card details */
+        .triage-rationale {
+            font-size: 12px;
+            color: #667eea;
+            font-style: italic;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+            display: none;
+            line-height: 1.4;
+        }
+        .triage-rationale.visible { display: block; }
+        .triage-next-action {
+            font-style: normal;
+            color: #475569;
+            margin-top: 3px;
+            font-size: 12px;
+        }
+
+        /* Triage not-yet-run prompt */
+        .triage-prompt-row {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .triage-prompt-text {
+            font-size: 13px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* Triage run button */
+        .triage-run-button {
+            padding: 9px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .triage-run-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+        }
+        .triage-run-button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* After-triage meta row (timestamp + retriage) */
+        .triage-meta-row {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 8px 14px;
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-radius: 8px;
+        }
+        .triage-meta-row.visible { display: flex; }
+        .triage-timestamp {
+            font-size: 12px;
+            color: #7c3aed;
+            font-style: italic;
+        }
+        .retriage-btn {
+            font-size: 12px;
+            font-weight: 700;
+            color: #7c3aed;
+            background: none;
+            border: 1px solid #c4b5fd;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .retriage-btn:hover { background: #ede9fe; }
+        .retriage-btn:disabled { color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; }
+
+        /* Triage summary panel */
+        .triage-summary-panel {
+            display: none;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border: 2px solid #c4b5fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .triage-summary-panel.visible { display: block; }
+        .triage-summary-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6d28d9;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .triage-summary-body {
+            font-size: 14px;
+            color: #4c1d95;
+            line-height: 1.6;
+        }
+
+        /* Card ordering animation */
+        .work-order-card {
+            transition: all 0.2s, box-shadow 0.2s;
+        }
+
+        /* =============================================
+           PHASE 6 — END-OF-DAY SHIFT REPORT GENERATOR
+           ============================================= */
+
+        /* Shift report prompt row (not-yet-run) */
+        .shift-report-prompt-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            background: #f0fdfa;
+            border: 1px dashed #99f6e4;
+            border-radius: 8px;
+        }
+
+        .shift-report-prompt-text {
+            font-size: 13px;
+            color: #0f766e;
+            font-style: italic;
+        }
+
+        /* Shift report generate button */
+        .shift-report-btn {
+            padding: 9px 18px;
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .shift-report-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+        }
+
+        .shift-report-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Post-generation meta row (timestamp + re-generate) */
+        .shift-report-meta-row {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 8px 14px;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            border-radius: 8px;
+        }
+
+        .shift-report-meta-row.visible { display: flex; }
+
+        .shift-report-timestamp {
+            font-size: 12px;
+            color: #0f766e;
+            font-style: italic;
+        }
+
+        .shift-report-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .shift-report-copy-btn {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f766e;
+            background: none;
+            border: 1px solid #5eead4;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .shift-report-copy-btn:hover { background: #ccfbf1; }
+
+        .shift-report-regen-btn {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f766e;
+            background: none;
+            border: 1px solid #5eead4;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .shift-report-regen-btn:hover { background: #ccfbf1; }
+        .shift-report-regen-btn:disabled { color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; }
+
+        /* Shift report output panel */
+        .shift-report-panel {
+            display: none;
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            border: 2px solid #5eead4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .shift-report-panel.visible { display: block; }
+
+        .shift-report-panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #0f766e;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shift-report-section-block {
+            margin-bottom: 16px;
+        }
+
+        .shift-report-section-block:last-child { margin-bottom: 0; }
+
+        .shift-report-section-heading {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #0f766e;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #99f6e4;
+        }
+
+        .shift-report-section-text {
+            font-size: 14px;
+            color: #134e4a;
+            line-height: 1.65;
+        }
+
+        /* Raw text area for copy (hidden) */
+        .shift-report-raw-text {
+            display: none;
+        }
+
+        /* =============================================
+           PHASE 7 — ABOUT PANEL
+           ============================================= */
+
+        .about-toggle-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.9);
+            padding: 6px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .about-toggle-btn:hover {
+            background: rgba(255,255,255,0.27);
+            color: white;
+        }
+
+        .about-panel {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 20px 24px;
+            display: none;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .about-panel.open { display: block; }
+
+        .about-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .about-panel-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a365d;
+            margin-bottom: 6px;
+        }
+
+        .about-panel-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+            max-width: 640px;
+        }
+
+        .about-close-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0 0 0 12px;
+            flex-shrink: 0;
+            line-height: 1;
+            font-family: inherit;
+        }
+
+        .about-close-btn:hover { color: #64748b; }
+
+        .about-patterns-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .about-patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 8px;
+        }
+
+        .about-pattern-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+        }
+
+        .about-pattern-icon {
+            font-size: 15px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .about-pattern-text { flex: 1; }
+
+        .about-pattern-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 2px;
+        }
+
+        .about-pattern-desc {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* =============================================
+           PHASE 7 — FOOTER
+           ============================================= */
+
+        .prototype-footer {
+            text-align: center;
+            padding: 16px 24px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 0.3px;
+        }
+
+        /* =============================================
+           PHASE 7 — MOBILE RESPONSIVENESS FIXES
+           ============================================= */
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+
+            .content { padding: 16px; }
+
+            .header { padding: 16px; }
+            .header h1 { font-size: 20px; }
+
+            .work-order-details { flex-direction: column; gap: 8px; }
+            .detail-header-info { flex-direction: column; }
+            .button-group { flex-direction: column; }
+            .turbine-meta { gap: 16px; padding: 12px 16px; }
+
+            /* Role toggle — make it wrap gracefully */
+            .role-toggle-bar { width: 100%; }
+            .role-toggle-btn { flex: 1; text-align: center; padding: 8px 10px; font-size: 12px; }
+
+            /* Stats row wraps on small screens */
+            .stats-row { gap: 6px; }
+            .stat-pill { font-size: 11px; padding: 4px 10px; }
+
+            /* About panel grid — single column on mobile */
+            .about-patterns-grid { grid-template-columns: 1fr; }
+
+            /* Escalation banner — tighter on mobile */
+            .escalation-banner { padding: 12px; }
+            .escalation-cta { display: none; }
+
+            /* Triage / shift report prompt rows — stack on mobile */
+            .triage-prompt-row,
+            .shift-report-prompt-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .triage-run-button,
+            .shift-report-btn { width: 100%; justify-content: center; }
+
+            /* Triage / shift report meta rows — stack */
+            .triage-meta-row,
+            .shift-report-meta-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+            /* Cat 5 email panel — tighten */
+            .cat5-email-panel { padding: 12px; }
+            .cat5-email-subject-row { flex-direction: column; }
+
+            /* Section title smaller */
+            .section-title { font-size: 16px; }
+
+            /* Submit button — easier to tap */
+            .submit-button { padding: 18px; font-size: 15px; }
+
+            /* WO number on cards */
+            .wo-number { font-size: 16px; }
+        }
+
+        @media (max-width: 400px) {
+            .header h1 { font-size: 18px; }
+            .about-toggle-btn span.about-label { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 1: Work Order List                                     -->
+    <!-- ============================================================ -->
+    <div id="list-screen" class="screen active">
+        <div class="header">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div class="role-toggle-bar" style="margin-bottom:0;">
+                    <button class="role-toggle-btn active" onclick="switchRole('tech')">👷 Technician</button>
+                    <button class="role-toggle-btn" onclick="switchRole('manager')">📊 Manager</button>
+                </div>
+                <button class="about-toggle-btn" onclick="toggleAbout('tech-about-panel')">ℹ <span class="about-label">About</span></button>
+            </div>
+            <h1>Work Orders</h1>
+            <div class="subtitle">Dacha Bay Wind Farm — Active Field Operations</div>
+        </div>
+        <!-- About Panel — Technician View -->
+        <div id="tech-about-panel" class="about-panel">
+            <div class="about-panel-header">
+                <div>
+                    <div class="about-panel-title">Dacha Bay Wind Farm — Work Order Prototype</div>
+                    <div class="about-panel-subtitle">A functional AI-powered field operations prototype built as an interview portfolio piece. It demonstrates seven distinct AI implementation patterns in a realistic SaaS operations context. All screens, forms, and AI features are live. Built by Adrian using the Claude API.</div>
+                </div>
+                <button class="about-close-btn" onclick="toggleAbout('tech-about-panel')">✕</button>
+            </div>
+            <div class="about-patterns-label">AI Patterns Demonstrated</div>
+            <div class="about-patterns-grid">
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">✍️</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Structured Output</div>
+                        <div class="about-pattern-desc">AI generates field notes from inspection form data (WO-2847)</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📷</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Multimodal Input</div>
+                        <div class="about-pattern-desc">Claude Vision analyses blade photos and suggests damage categories</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">🧑‍💼</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Human-in-the-Loop</div>
+                        <div class="about-pattern-desc">Technician reviews and accepts or overrides every AI suggestion</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">⚡</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Condition-Triggered Automation</div>
+                        <div class="about-pattern-desc">Cat 5 finding on submission triggers an escalation email draft via Gmail</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">🔢</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Decision Support</div>
+                        <div class="about-pattern-desc">AI triage prioritises all work orders with rationale for the manager</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📊</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Data Persistence</div>
+                        <div class="about-pattern-desc">Every submission logs a row to Google Sheets via Apps Script</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📝</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">AI Reporting Layer</div>
+                        <div class="about-pattern-desc">Manager generates a shift handover report across all work orders in one click</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="list-header-meta">
+                <span>Showing all open orders</span>
+                <span class="wo-count">7 work orders</span>
+            </div>
+
+            <!-- WO-2847 — clickable, blade inspection, pre-populated -->
+            <div class="work-order-card" onclick="openDetail('WO-2847')">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2847</div>
+                    <div class="status-badge status-in-progress">In Progress</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-142 — North Array, Row 4</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>F. Henri</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2851 — clickable, routine maintenance, blank -->
+            <div class="work-order-card" onclick="openDetail('WO-2851')">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2851</div>
+                    <div class="status-badge status-in-progress">In Progress</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-156 — South Array, Row 2</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>L. Moholy</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2859 — non-clickable, escalated -->
+            <div class="work-order-card inactive" onclick="">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2859</div>
+                    <div class="status-badge status-escalated">Escalated</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-203 — North Array, Row 7</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>F. Henri</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2863 — non-clickable, awaiting parts -->
+            <div class="work-order-card inactive" onclick="">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2863</div>
+                    <div class="status-badge status-awaiting-parts">Awaiting Parts</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-178 — East Array, Row 1</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>D. Maar</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2871 — non-clickable, complete -->
+            <div class="work-order-card inactive" onclick="">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2871</div>
+                    <div class="status-badge status-complete">Complete</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-115 — South Array, Row 5</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>L. Moholy</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2876 — non-clickable, assigned -->
+            <div class="work-order-card inactive" onclick="">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2876</div>
+                    <div class="status-badge status-assigned">Assigned</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-199 — East Array, Row 3</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>D. Maar</span></div>
+                </div>
+            </div>
+
+            <!-- WO-2882 — non-clickable, assigned -->
+            <div class="work-order-card inactive" onclick="">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2882</div>
+                    <div class="status-badge status-assigned">Assigned</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-087 — West Array, Row 2</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>S. Delaunay</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN: Manager Dashboard                                     -->
+    <!-- ============================================================ -->
+    <div id="manager-dashboard-screen" class="screen">
+        <div class="header">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div class="role-toggle-bar" style="margin-bottom:0;">
+                    <button class="role-toggle-btn" onclick="switchRole('tech')">👷 Technician</button>
+                    <button class="role-toggle-btn active">📊 Manager</button>
+                </div>
+                <button class="about-toggle-btn" onclick="toggleAbout('mgr-about-panel')">ℹ <span class="about-label">About</span></button>
+            </div>
+            <h1>Manager Dashboard</h1>
+            <div class="subtitle">Dacha Bay Wind Farm — All Work Orders</div>
+        </div>
+        <!-- About Panel — Manager View -->
+        <div id="mgr-about-panel" class="about-panel">
+            <div class="about-panel-header">
+                <div>
+                    <div class="about-panel-title">Dacha Bay Wind Farm — Work Order Prototype</div>
+                    <div class="about-panel-subtitle">A functional AI-powered field operations prototype built as an interview portfolio piece. It demonstrates seven distinct AI implementation patterns in a realistic SaaS operations context. All screens, forms, and AI features are live. Built by Adrian using the Claude API.</div>
+                </div>
+                <button class="about-close-btn" onclick="toggleAbout('mgr-about-panel')">✕</button>
+            </div>
+            <div class="about-patterns-label">AI Patterns Demonstrated</div>
+            <div class="about-patterns-grid">
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">✍️</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Structured Output</div>
+                        <div class="about-pattern-desc">AI generates field notes from inspection form data (WO-2847)</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📷</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Multimodal Input</div>
+                        <div class="about-pattern-desc">Claude Vision analyses blade photos and suggests damage categories</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">🧑‍💼</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Human-in-the-Loop</div>
+                        <div class="about-pattern-desc">Technician reviews and accepts or overrides every AI suggestion</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">⚡</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Condition-Triggered Automation</div>
+                        <div class="about-pattern-desc">Cat 5 finding on submission triggers an escalation email draft via Gmail</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">🔢</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Decision Support</div>
+                        <div class="about-pattern-desc">AI triage prioritises all work orders with rationale for the manager</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📊</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">Data Persistence</div>
+                        <div class="about-pattern-desc">Every submission logs a row to Google Sheets via Apps Script</div>
+                    </div>
+                </div>
+                <div class="about-pattern-item">
+                    <div class="about-pattern-icon">📝</div>
+                    <div class="about-pattern-text">
+                        <div class="about-pattern-name">AI Reporting Layer</div>
+                        <div class="about-pattern-desc">Manager generates a shift handover report across all work orders in one click</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+
+            <!-- Escalation alert -->
+            <div class="escalation-banner" onclick="openManagerDetail('WO-2859')">
+                <div class="escalation-icon">⚠️</div>
+                <div class="escalation-text">
+                    <div class="escalation-title">1 Active Escalation Requires Attention</div>
+                    <div class="escalation-detail">WO-2859 · T-203 North Array Row 7 · Cat 5 Blade Damage · F. Henri</div>
+                </div>
+                <div class="escalation-cta">View →</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-pill">7 Total</div>
+                <div class="stat-pill stat-in-progress">2 In Progress</div>
+                <div class="stat-pill stat-escalated">1 Escalated</div>
+                <div class="stat-pill">1 Awaiting Parts</div>
+                <div class="stat-pill stat-complete">1 Complete</div>
+                <div class="stat-pill">2 Assigned</div>
+            </div>
+
+            <!-- Triage: not-yet-run prompt + button -->
+            <div class="triage-prompt-row" id="triage-prompt-row">
+                <span class="triage-prompt-text">AI triage not yet run for this session — click to prioritise all work orders</span>
+                <button class="triage-run-button" id="triage-run-btn" onclick="runTriage()">✦ Run AI Triage</button>
+            </div>
+
+            <!-- Triage: after-run meta row (timestamp + retriage) -->
+            <div class="triage-meta-row" id="triage-meta-row">
+                <span class="triage-timestamp" id="triage-timestamp">Last triaged: —</span>
+                <button class="retriage-btn" id="retriage-btn" onclick="runTriage()">✦ Retriage</button>
+            </div>
+
+            <!-- Triage summary panel (hidden until triage runs) -->
+            <div class="triage-summary-panel" id="triage-summary-panel">
+                <div class="triage-summary-title">✦ AI Triage Summary <span class="ai-badge">AI</span></div>
+                <div class="triage-summary-body" id="triage-summary-body"></div>
+            </div>
+
+            <!-- Phase 6: Shift Report — not-yet-run prompt row -->
+            <div class="shift-report-prompt-row" id="shift-report-prompt-row">
+                <span class="shift-report-prompt-text">End-of-day shift report not yet generated — summarise all work orders for handover</span>
+                <button class="shift-report-btn" id="shift-report-btn" onclick="generateShiftReport()">✦ Generate Shift Report</button>
+            </div>
+
+            <!-- Phase 6: Shift Report — post-generation meta row -->
+            <div class="shift-report-meta-row" id="shift-report-meta-row">
+                <span class="shift-report-timestamp" id="shift-report-timestamp">Generated: —</span>
+                <div class="shift-report-actions">
+                    <button class="shift-report-copy-btn" id="shift-report-copy-btn" onclick="copyShiftReport()">⎘ Copy</button>
+                    <button class="shift-report-regen-btn" id="shift-report-regen-btn" onclick="generateShiftReport()">✦ Regenerate</button>
+                </div>
+            </div>
+
+            <!-- Phase 6: Shift Report — output panel -->
+            <div class="shift-report-panel" id="shift-report-panel">
+                <div class="shift-report-panel-title">✦ End-of-Day Shift Report <span class="ai-badge">AI</span></div>
+                <div id="shift-report-body"></div>
+            </div>
+            <textarea class="shift-report-raw-text" id="shift-report-raw-text" readonly></textarea>
+
+            <div class="manager-section-label" id="manager-section-label">All Work Orders</div>
+
+            <!-- Manager cards container — reordered by JS after triage -->
+            <div id="manager-cards-container">
+
+            <!-- WO-2847 -->
+            <div class="work-order-card" id="mgr-card-WO-2847" data-wo="WO-2847" onclick="openManagerDetail('WO-2847')"
+                 data-status="in-progress" data-type="Blade Inspection" data-turbine="T-142" data-location="North Array, Row 4" data-tech="F. Henri">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2847 <span class="priority-badge" id="priority-WO-2847" style="display:none"></span></div>
+                    <div class="status-badge status-in-progress">In Progress</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-142 — North Array, Row 4</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>F. Henri</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2847"></div>
+            </div>
+
+            <!-- WO-2851 -->
+            <div class="work-order-card" id="mgr-card-WO-2851" data-wo="WO-2851" onclick="openManagerDetail('WO-2851')"
+                 data-status="in-progress" data-type="Routine Maintenance" data-turbine="T-156" data-location="South Array, Row 2" data-tech="L. Moholy">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2851 <span class="priority-badge" id="priority-WO-2851" style="display:none"></span></div>
+                    <div class="status-badge status-in-progress">In Progress</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-156 — South Array, Row 2</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>L. Moholy</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2851"></div>
+            </div>
+
+            <!-- WO-2859 — escalated -->
+            <div class="work-order-card escalated-card" id="mgr-card-WO-2859" data-wo="WO-2859" onclick="openManagerDetail('WO-2859')"
+                 data-status="escalated" data-type="Blade Inspection" data-turbine="T-203" data-location="North Array, Row 7" data-tech="F. Henri">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2859 <span class="priority-badge" id="priority-WO-2859" style="display:none"></span></div>
+                    <div class="status-badge status-escalated">Escalated</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-203 — North Array, Row 7</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>F. Henri</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2859"></div>
+            </div>
+
+            <!-- WO-2863 -->
+            <div class="work-order-card" id="mgr-card-WO-2863" data-wo="WO-2863" onclick="openManagerDetail('WO-2863')"
+                 data-status="awaiting-parts" data-type="Blade Inspection" data-turbine="T-178" data-location="East Array, Row 1" data-tech="D. Maar">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2863 <span class="priority-badge" id="priority-WO-2863" style="display:none"></span></div>
+                    <div class="status-badge status-awaiting-parts">Awaiting Parts</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-178 — East Array, Row 1</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>D. Maar</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2863"></div>
+            </div>
+
+            <!-- WO-2871 -->
+            <div class="work-order-card" id="mgr-card-WO-2871" data-wo="WO-2871" onclick="openManagerDetail('WO-2871')"
+                 data-status="complete" data-type="Routine Maintenance" data-turbine="T-115" data-location="South Array, Row 5" data-tech="L. Moholy">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2871 <span class="priority-badge" id="priority-WO-2871" style="display:none"></span></div>
+                    <div class="status-badge status-complete">Complete</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-115 — South Array, Row 5</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>L. Moholy</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2871"></div>
+            </div>
+
+            <!-- WO-2876 -->
+            <div class="work-order-card" id="mgr-card-WO-2876" data-wo="WO-2876" onclick="openManagerDetail('WO-2876')"
+                 data-status="assigned" data-type="Blade Inspection" data-turbine="T-199" data-location="East Array, Row 3" data-tech="D. Maar">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2876 <span class="priority-badge" id="priority-WO-2876" style="display:none"></span></div>
+                    <div class="status-badge status-assigned">Assigned</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-199 — East Array, Row 3</span></div>
+                    <div class="detail-item"><span>📋</span><span>Blade Inspection & LEE Assessment</span></div>
+                    <div class="detail-item"><span>👤</span><span>D. Maar</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2876"></div>
+            </div>
+
+            <!-- WO-2882 -->
+            <div class="work-order-card" id="mgr-card-WO-2882" data-wo="WO-2882" onclick="openManagerDetail('WO-2882')"
+                 data-status="assigned" data-type="Routine Maintenance" data-turbine="T-087" data-location="West Array, Row 2" data-tech="S. Delaunay">
+                <div class="work-order-header">
+                    <div class="wo-number">WO-2882 <span class="priority-badge" id="priority-WO-2882" style="display:none"></span></div>
+                    <div class="status-badge status-assigned">Assigned</div>
+                </div>
+                <div class="work-order-details">
+                    <div class="detail-item"><span>🔧</span><span>T-087 — West Array, Row 2</span></div>
+                    <div class="detail-item"><span>📋</span><span>Routine Maintenance</span></div>
+                    <div class="detail-item"><span>👤</span><span>S. Delaunay</span></div>
+                </div>
+                <div class="triage-rationale" id="rationale-WO-2882"></div>
+            </div>
+
+            </div><!-- end #manager-cards-container -->
+
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN: Manager Detail View (read-only, populated by JS)     -->
+    <!-- ============================================================ -->
+    <div id="manager-detail-screen" class="screen">
+        <div class="header">
+            <button class="back-button" onclick="showScreen('manager-dashboard-screen')">← Back to Dashboard</button>
+            <div class="detail-header-info">
+                <div>
+                    <h1 id="mgr-wo-number">WO-2859</h1>
+                    <div class="turbine-info" id="mgr-turbine-subtitle">T-203 · Blade Inspection & LEE Assessment</div>
+                </div>
+                <div class="status-badge" id="mgr-status-badge">Escalated</div>
+            </div>
+        </div>
+
+        <!-- Turbine metadata strip -->
+        <div class="turbine-meta" id="mgr-turbine-meta"></div>
+
+        <div class="content">
+            <div class="read-only-banner">
+                👁&nbsp; Read-only view &nbsp;·&nbsp; Manager access &nbsp;·&nbsp; Submitted data cannot be edited
+            </div>
+
+            <!-- Dynamically populated sections -->
+            <div id="mgr-escalation-block"></div>
+            <div id="mgr-submission-meta"></div>
+            <div id="mgr-data-block"></div>
+            <div id="mgr-notes-block"></div>
+        </div>
+    </div>
+    <div id="detail-screen" class="screen">
+        <div class="header">
+            <button class="back-button" onclick="showScreen('list-screen')">← Back</button>
+            <div class="detail-header-info">
+                <div>
+                    <h1>WO-2847</h1>
+                    <div class="turbine-info">Turbine T-142 • Blade Inspection & LEE Assessment</div>
+                </div>
+                <div class="status-badge status-in-progress">In Progress</div>
+            </div>
+        </div>
+
+        <!-- Turbine metadata strip -->
+        <div class="turbine-meta">
+            <div class="meta-item">
+                <span class="meta-label">Wind Farm</span>
+                <span class="meta-value">Dacha Bay</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Turbine Model</span>
+                <span class="meta-value">Vestas V150-4.5</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Last Service</span>
+                <span class="meta-value">14 Nov 2025</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Location</span>
+                <span class="meta-value">North Array — Row 4</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Technician</span>
+                <span class="meta-value">F. Henri</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">0 of 11 tasks complete</div>
+
+            <!-- Visual Inspections -->
+            <div class="section">
+                <div class="section-title">Visual Inspections</div>
+                <div class="checkbox-item" id="check-blade1">
+                    <input type="checkbox" id="inspection-blade1" onchange="updateProgress()">
+                    <label for="inspection-blade1">Blade 1 Visual Inspection</label>
+                </div>
+                <div class="checkbox-item" id="check-blade2">
+                    <input type="checkbox" id="inspection-blade2" onchange="updateProgress()">
+                    <label for="inspection-blade2">Blade 2 Visual Inspection</label>
+                </div>
+                <div class="checkbox-item" id="check-blade3">
+                    <input type="checkbox" id="inspection-blade3" onchange="updateProgress()">
+                    <label for="inspection-blade3">Blade 3 Visual Inspection</label>
+                </div>
+            </div>
+
+            <!-- Documentation -->
+            <div class="section">
+                <div class="section-title">Documentation</div>
+                <div class="checkbox-item" id="check-photo">
+                    <input type="checkbox" id="photo-doc" onchange="updateProgress()">
+                    <label for="photo-doc">Photo Documentation Captured</label>
+                </div>
+            </div>
+
+            <!-- LEE Assessment -->
+            <div class="section">
+                <div class="section-title">Leading Edge Erosion Assessment</div>
+
+                <!-- BLADE 1 -->
+                <div class="blade-assessment" id="lee-blade1">
+                    <div class="blade-title">Blade 1</div>
+
+                    <!-- Photo upload zone -->
+                    <div class="photo-upload-zone" id="photo-zone-1" onclick="triggerPhotoUpload(1)">
+                        <div class="photo-upload-icon">📷</div>
+                        <div class="photo-upload-text">
+                            <div class="photo-upload-label">Upload Photo for AI Analysis</div>
+                            <div class="photo-upload-sublabel">Claude Vision will suggest a damage category</div>
+                        </div>
+                    </div>
+                    <input type="file" class="photo-file-input" id="photo-input-1" accept="image/*" onchange="handlePhotoUpload(1, this)">
+
+                    <!-- Analysing indicator -->
+                    <div id="vision-status-1" style="display:none;" class="vision-analysing">
+                        <span class="ai-loading">✦</span> Analysing photo...
+                    </div>
+                    <div id="drive-status-1" class="drive-status"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Damage Category
+                            <span id="ai-badge-1"></span>
+                        </label>
+                        <select id="category-blade1" onchange="onCategoryChange(1)">
+                            <option value="">Select category...</option>
+                            <option value="cat1">Cat 1: Cosmetic</option>
+                            <option value="cat3">Cat 3: Repair During Planned Shutdown</option>
+                            <option value="cat5">Cat 5: Immediate Shutdown / Urgent Repair</option>
+                        </select>
+                        <div class="ai-suggestion-box" id="ai-suggestion-1">
+                            <div class="ai-suggestion-header">✦ AI Assessment</div>
+                            <span id="ai-rationale-1"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Erosion Length (mm)</label>
+                        <input type="number" id="length-blade1" placeholder="Enter length" oninput="updateProgress()">
+                    </div>
+                </div>
+
+                <!-- BLADE 2 -->
+                <div class="blade-assessment" id="lee-blade2">
+                    <div class="blade-title">Blade 2</div>
+
+                    <div class="photo-upload-zone" id="photo-zone-2" onclick="triggerPhotoUpload(2)">
+                        <div class="photo-upload-icon">📷</div>
+                        <div class="photo-upload-text">
+                            <div class="photo-upload-label">Upload Photo for AI Analysis</div>
+                            <div class="photo-upload-sublabel">Claude Vision will suggest a damage category</div>
+                        </div>
+                    </div>
+                    <input type="file" class="photo-file-input" id="photo-input-2" accept="image/*" onchange="handlePhotoUpload(2, this)">
+
+                    <div id="vision-status-2" style="display:none;" class="vision-analysing">
+                        <span class="ai-loading">✦</span> Analysing photo...
+                    </div>
+                    <div id="drive-status-2" class="drive-status"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Damage Category
+                            <span id="ai-badge-2"></span>
+                        </label>
+                        <select id="category-blade2" onchange="onCategoryChange(2)">
+                            <option value="">Select category...</option>
+                            <option value="cat1">Cat 1: Cosmetic</option>
+                            <option value="cat3">Cat 3: Repair During Planned Shutdown</option>
+                            <option value="cat5">Cat 5: Immediate Shutdown / Urgent Repair</option>
+                        </select>
+                        <div class="ai-suggestion-box" id="ai-suggestion-2">
+                            <div class="ai-suggestion-header">✦ AI Assessment</div>
+                            <span id="ai-rationale-2"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Erosion Length (mm)</label>
+                        <input type="number" id="length-blade2" placeholder="Enter length" oninput="updateProgress()">
+                    </div>
+                </div>
+
+                <!-- BLADE 3 -->
+                <div class="blade-assessment" id="lee-blade3">
+                    <div class="blade-title">Blade 3</div>
+
+                    <div class="photo-upload-zone" id="photo-zone-3" onclick="triggerPhotoUpload(3)">
+                        <div class="photo-upload-icon">📷</div>
+                        <div class="photo-upload-text">
+                            <div class="photo-upload-label">Upload Photo for AI Analysis</div>
+                            <div class="photo-upload-sublabel">Claude Vision will suggest a damage category</div>
+                        </div>
+                    </div>
+                    <input type="file" class="photo-file-input" id="photo-input-3" accept="image/*" onchange="handlePhotoUpload(3, this)">
+
+                    <div id="vision-status-3" style="display:none;" class="vision-analysing">
+                        <span class="ai-loading">✦</span> Analysing photo...
+                    </div>
+                    <div id="drive-status-3" class="drive-status"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Damage Category
+                            <span id="ai-badge-3"></span>
+                        </label>
+                        <select id="category-blade3" onchange="onCategoryChange(3)">
+                            <option value="">Select category...</option>
+                            <option value="cat1">Cat 1: Cosmetic</option>
+                            <option value="cat3">Cat 3: Repair During Planned Shutdown</option>
+                            <option value="cat5">Cat 5: Immediate Shutdown / Urgent Repair</option>
+                        </select>
+                        <div class="ai-suggestion-box" id="ai-suggestion-3">
+                            <div class="ai-suggestion-header">✦ AI Assessment</div>
+                            <span id="ai-rationale-3"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Erosion Length (mm)</label>
+                        <input type="number" id="length-blade3" placeholder="Enter length" oninput="updateProgress()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Field Notes -->
+            <div class="section">
+                <div class="section-title">Field Notes <span class="ai-badge">AI</span></div>
+                <button class="ai-generate-button" id="ai-generate-btn" onclick="generateFieldNotes()">
+                    ✦ Generate Draft Notes from Inspection Data
+                </button>
+                <div class="ai-status" id="ai-status"></div>
+                <div class="notes-container" id="notes-container">
+                    <textarea id="field-notes" placeholder="Enter field observations, conditions, or additional notes — or use the AI button above to generate a draft from your inspection data..." oninput="updateProgress()"></textarea>
+                </div>
+            </div>
+
+            <button class="submit-button" id="submit-button" disabled onclick="showReview()">
+                Submit Work Order
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 2b: Work Order Detail — WO-2851 Routine Maintenance   -->
+    <!-- ============================================================ -->
+    <div id="maintenance-detail-screen" class="screen">
+        <div class="header">
+            <button class="back-button" onclick="showScreen('list-screen')">← Back</button>
+            <div class="detail-header-info">
+                <div>
+                    <h1>WO-2851</h1>
+                    <div class="turbine-info">Turbine T-156 • Routine Maintenance</div>
+                </div>
+                <div class="status-badge status-in-progress">In Progress</div>
+            </div>
+        </div>
+
+        <!-- Turbine metadata strip -->
+        <div class="turbine-meta">
+            <div class="meta-item">
+                <span class="meta-label">Wind Farm</span>
+                <span class="meta-value">Dacha Bay</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Turbine Model</span>
+                <span class="meta-value">Vestas V150-4.5</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Last Service</span>
+                <span class="meta-value">02 Jan 2026</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Location</span>
+                <span class="meta-value">South Array — Row 2</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Technician</span>
+                <span class="meta-value">L. Moholy</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="progress-bar">
+                <div class="progress-fill" id="maint-progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="maint-progress-text">0 of 10 tasks complete</div>
+
+            <!-- Lubrication & Fluid Checks -->
+            <div class="section">
+                <div class="section-title">Lubrication & Fluid Checks</div>
+                <div class="checkbox-item" id="mcheck-gearbox-oil">
+                    <input type="checkbox" id="maint-gearbox-oil" onchange="updateMaintenanceProgress()">
+                    <label for="maint-gearbox-oil">Gearbox oil level checked and topped up if required</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-gearbox-sample">
+                    <input type="checkbox" id="maint-gearbox-sample" onchange="updateMaintenanceProgress()">
+                    <label for="maint-gearbox-sample">Gearbox oil sample taken for analysis</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-pitch-bearing">
+                    <input type="checkbox" id="maint-pitch-bearing" onchange="updateMaintenanceProgress()">
+                    <label for="maint-pitch-bearing">Pitch bearing lubrication applied — all 3 blades</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-yaw">
+                    <input type="checkbox" id="maint-yaw" onchange="updateMaintenanceProgress()">
+                    <label for="maint-yaw">Yaw system lubrication completed</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-cooling">
+                    <input type="checkbox" id="maint-cooling" onchange="updateMaintenanceProgress()">
+                    <label for="maint-cooling">Cooling system fluid level checked</label>
+                </div>
+            </div>
+
+            <!-- Mechanical Inspection -->
+            <div class="section">
+                <div class="section-title">Mechanical Inspection</div>
+                <div class="checkbox-item" id="mcheck-main-bearing">
+                    <input type="checkbox" id="maint-main-bearing" onchange="updateMaintenanceProgress()">
+                    <label for="maint-main-bearing">Main shaft bearing inspected — no abnormal wear or play</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-brake">
+                    <input type="checkbox" id="maint-brake" onchange="updateMaintenanceProgress()">
+                    <label for="maint-brake">Brake pad wear measured and within service limits</label>
+                </div>
+                <div class="checkbox-item" id="mcheck-torque">
+                    <input type="checkbox" id="maint-torque" onchange="updateMaintenanceProgress()">
+                    <label for="maint-torque">Torque check completed on key fasteners</label>
+                </div>
+            </div>
+
+            <!-- Safety Systems -->
+            <div class="section">
+                <div class="section-title">Safety Systems</div>
+                <div class="checkbox-item" id="mcheck-safety">
+                    <input type="checkbox" id="maint-safety" onchange="updateMaintenanceProgress()">
+                    <label for="maint-safety">Safety systems tested — emergency stop and vibration sensor confirmed operational</label>
+                </div>
+            </div>
+
+            <!-- Field Notes -->
+            <div class="section">
+                <div class="section-title">Field Notes <span class="ai-badge">AI</span></div>
+                <button class="ai-generate-button" id="maint-ai-generate-btn" onclick="generateMaintenanceNotes()">
+                    ✦ Generate Draft Notes from Maintenance Data
+                </button>
+                <div class="ai-status" id="maint-ai-status"></div>
+                <div class="notes-container" id="maint-notes-container">
+                    <textarea id="maint-field-notes" placeholder="Enter observations, fluid condition notes, anomalies found, or any follow-up actions required — or use the AI button above to generate a draft..." oninput="updateMaintenanceProgress()"></textarea>
+                </div>
+            </div>
+
+            <button class="submit-button" id="maint-submit-button" disabled onclick="showMaintenanceReview()">
+                Submit Work Order
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 3a: Review — WO-2847 Blade Inspection                 -->
+    <!-- ============================================================ -->
+    <div id="review-screen" class="screen">
+        <div class="header">
+            <button class="back-button" onclick="showScreen('detail-screen')">← Back to Edit</button>
+            <h1>Review Submission</h1>
+            <div class="subtitle">WO-2847 • Turbine T-142</div>
+        </div>
+        <div class="content">
+            <div class="review-section">
+                <div class="review-title">Inspections Completed</div>
+                <div class="review-item">
+                    <span class="review-label">Blade 1 Visual Inspection</span>
+                    <span class="review-value">✓ Complete</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Blade 2 Visual Inspection</span>
+                    <span class="review-value">✓ Complete</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Blade 3 Visual Inspection</span>
+                    <span class="review-value">✓ Complete</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Photo Documentation</span>
+                    <span class="review-value">✓ Complete</span>
+                </div>
+            </div>
+
+            <div class="review-section">
+                <div class="review-title">Leading Edge Erosion Data</div>
+                <div id="lee-review-data"></div>
+            </div>
+
+            <div class="review-section">
+                <div class="review-title">Field Notes</div>
+                <div class="review-notes" id="review-notes"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="button-secondary" onclick="showScreen('detail-screen')">Back to Edit</button>
+                <button class="submit-button" onclick="confirmSubmission('WO-2847', 'T-142')">Confirm Submission</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 3b: Review — WO-2851 Routine Maintenance              -->
+    <!-- ============================================================ -->
+    <div id="maintenance-review-screen" class="screen">
+        <div class="header">
+            <button class="back-button" onclick="showScreen('maintenance-detail-screen')">← Back to Edit</button>
+            <h1>Review Submission</h1>
+            <div class="subtitle">WO-2851 • Turbine T-156</div>
+        </div>
+        <div class="content">
+            <div class="review-section">
+                <div class="review-title">Maintenance Tasks Completed</div>
+                <div id="maint-review-checklist"></div>
+            </div>
+
+            <div class="review-section">
+                <div class="review-title">Field Notes</div>
+                <div class="review-notes" id="maint-review-notes"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="button-secondary" onclick="showScreen('maintenance-detail-screen')">Back to Edit</button>
+                <button class="submit-button" onclick="confirmSubmission('WO-2851', 'T-156')">Confirm Submission</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 4: Confirmation (shared, dynamic)                     -->
+    <!-- ============================================================ -->
+    <div id="confirmation-screen" class="screen">
+        <div class="header">
+            <h1>Submission Confirmed</h1>
+        </div>
+        <div class="content">
+            <div class="confirmation-icon">✓</div>
+            <div class="confirmation-message">
+                <h2>Work Order Submitted</h2>
+                <p id="confirmation-message-text">Work order has been successfully submitted and is now available for review.</p>
+            </div>
+
+            <div class="review-section">
+                <div class="review-title">Submission Details</div>
+                <div class="review-item">
+                    <span class="review-label">Work Order</span>
+                    <span class="review-value" id="confirm-wo-number">—</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Turbine</span>
+                    <span class="review-value" id="confirm-turbine">—</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Status</span>
+                    <span class="review-value">Complete</span>
+                </div>
+                <div class="review-item">
+                    <span class="review-label">Submitted</span>
+                    <span class="review-value" id="submission-time"></span>
+                </div>
+                <a id="drive-confirm-link" class="drive-confirm-link" href="#" target="_blank" style="display:none;">
+                    📁 View submission in Drive →
+                </a>
+                <div id="sheets-log-status" style="display:none; margin-top:8px; font-size:14px; font-weight:500;"></div>
+            </div>
+
+            <!-- Phase 3: Cat 5 Escalation Email Panel (hidden unless cat5 detected) -->
+            <div id="cat5-email-panel" class="cat5-email-panel sending" style="display:none;">
+                <div class="cat5-email-header">
+                    <div class="cat5-email-icon">📧</div>
+                    <div class="cat5-email-header-text">
+                        <div class="cat5-email-title">Escalation Draft Created</div>
+                        <div class="cat5-email-to" id="cat5-email-to">To: —</div>
+                    </div>
+                    <div class="cat5-status-badge" id="cat5-status-badge">⏳ Drafting…</div>
+                </div>
+                <div class="cat5-email-subject-row">
+                    <span class="cat5-email-meta-label">Subject:</span>
+                    <span class="cat5-email-subject-text" id="cat5-email-subject">Generating…</span>
+                </div>
+                <div class="cat5-email-preview" id="cat5-email-preview">Claude is drafting the escalation email…</div>
+            </div>
+
+            <button class="submit-button" onclick="returnToList()">Return to Work Order List</button>
+        </div>
+    </div>
+
+</div><!-- end .container -->
+
+<div class="prototype-footer">
+    Work Order Prototype v7 &nbsp;·&nbsp; Dacha Bay Wind Farm &nbsp;·&nbsp; Built with Claude
+</div>
+
+<script>
+    // ============================================================
+    // API KEY — replace with your actual key
+    // Do not share this file publicly while the key is present
+    // ============================================================
+    const ANTHROPIC_API_KEY = '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'; // Add your Anthropic API key here to enable AI features
+
+    // ============================================================
+    // GOOGLE DRIVE ENDPOINT
+    // Paste your Apps Script Web App URL here after deploying
+    // Drive_Script.gs. Leave empty to disable Drive saving.
+    // ============================================================
+    const DRIVE_ENDPOINT = '';
+
+    // ============================================================
+    // PHASE 3 — CAT 5 ESCALATION EMAIL
+    // Change this to your real email address before a live demo.
+    // This is the recipient of the automated escalation email.
+    // ============================================================
+    const ESCALATION_RECIPIENT = 'placeholder@placeholder.ca';
+
+    // LEE category labels
+    const categoryLabels = {
+        'cat1': 'Cat 1: Cosmetic',
+        'cat3': 'Cat 3: Repair During Planned Shutdown',
+        'cat5': 'Cat 5: Immediate Shutdown / Urgent Repair'
+    };
+
+    // Maintenance task labels (for review screen)
+    const maintTaskLabels = {
+        'maint-gearbox-oil':    'Gearbox oil level checked',
+        'maint-gearbox-sample': 'Gearbox oil sample taken',
+        'maint-pitch-bearing':  'Pitch bearing lubrication — all 3 blades',
+        'maint-yaw':            'Yaw system lubrication',
+        'maint-cooling':        'Cooling system fluid level checked',
+        'maint-main-bearing':   'Main shaft bearing inspected',
+        'maint-brake':          'Brake pad wear measured',
+        'maint-torque':         'Torque check on key fasteners',
+        'maint-safety':         'Safety systems tested'
+    };
+
+    // -------------------------------------------------------
+    // Navigation
+    // -------------------------------------------------------
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function toggleAbout(panelId) {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        panel.classList.toggle('open');
+    }
+
+    function openDetail(woNumber) {
+        if (woNumber === 'WO-2847') {
+            showScreen('detail-screen');
+            initWO2847();
+        } else if (woNumber === 'WO-2851') {
+            showScreen('maintenance-detail-screen');
+            updateMaintenanceProgress();
+        }
+    }
+
+    // -------------------------------------------------------
+    // WO-2847 Pre-population
+    // Sets the demo state: all inspections done, photo done,
+    // Blade 1 (Cat 3, 380mm) and Blade 2 (Cat 1, 95mm) complete,
+    // Blade 3 and field notes empty.
+    // -------------------------------------------------------
+    function initWO2847() {
+        // Inspections — all checked
+        document.getElementById('inspection-blade1').checked = true;
+        document.getElementById('inspection-blade2').checked = true;
+        document.getElementById('inspection-blade3').checked = true;
+
+        // Photo documentation — done
+        document.getElementById('photo-doc').checked = true;
+
+        // Blade 1: Cat 3, 380mm
+        document.getElementById('category-blade1').value = 'cat3';
+        document.getElementById('length-blade1').value = '380';
+
+        // Blade 2: Cat 1, 95mm
+        document.getElementById('category-blade2').value = 'cat1';
+        document.getElementById('length-blade2').value = '95';
+
+        // Blade 3: empty
+        document.getElementById('category-blade3').value = '';
+        document.getElementById('length-blade3').value = '';
+
+        // Field notes: empty
+        document.getElementById('field-notes').value = '';
+        document.getElementById('ai-status').textContent = '';
+        document.getElementById('ai-generate-btn').innerHTML = '✦ Generate Draft Notes from Inspection Data';
+        document.getElementById('ai-generate-btn').disabled = false;
+
+        // Reset photo upload zones and AI vision state
+        for (let i = 1; i <= 3; i++) {
+            aiSuggestedCategory[i] = null;
+
+            // Reset badge
+            const badge = document.getElementById('ai-badge-' + i);
+            if (badge) badge.innerHTML = '';
+
+            // Reset suggestion box
+            const box = document.getElementById('ai-suggestion-' + i);
+            if (box) { box.classList.remove('visible'); }
+            const rationale = document.getElementById('ai-rationale-' + i);
+            if (rationale) rationale.textContent = '';
+            const header = box ? box.querySelector('.ai-suggestion-header') : null;
+            if (header) header.textContent = '✦ AI Assessment';
+
+            // Reset vision status
+            const vs = document.getElementById('vision-status-' + i);
+            if (vs) vs.style.display = 'none';
+
+            // Reset photo zone
+            const zone = document.getElementById('photo-zone-' + i);
+            if (zone) {
+                zone.classList.remove('has-photo', 'analysing');
+                zone.onclick = function() { triggerPhotoUpload(i); };
+                zone.innerHTML =
+                    '<div class="photo-upload-icon">📷</div>' +
+                    '<div class="photo-upload-text">' +
+                        '<div class="photo-upload-label">Upload Photo for AI Analysis</div>' +
+                        '<div class="photo-upload-sublabel">Claude Vision will suggest a damage category</div>' +
+                    '</div>';
+            }
+
+            // Reset file input
+            const fileInput = document.getElementById('photo-input-' + i);
+            if (fileInput) fileInput.value = '';
+        }
+
+        updateProgress();
+    }
+
+    // -------------------------------------------------------
+    // WO-2847 Progress
+    // -------------------------------------------------------
+    function updateProgress() {
+        let completed = 0;
+        const total = 11;
+
+        // Inspections
+        ['blade1', 'blade2', 'blade3'].forEach(b => {
+            const checked = document.getElementById('inspection-' + b).checked;
+            const el = document.getElementById('check-' + b);
+            if (checked) { completed++; el.classList.add('complete'); }
+            else { el.classList.remove('complete'); }
+        });
+
+        // Photo
+        const photoDone = document.getElementById('photo-doc').checked;
+        const photoEl = document.getElementById('check-photo');
+        if (photoDone) { completed++; photoEl.classList.add('complete'); }
+        else { photoEl.classList.remove('complete'); }
+
+        // LEE assessments
+        for (let i = 1; i <= 3; i++) {
+            const cat = document.getElementById('category-blade' + i).value;
+            const len = document.getElementById('length-blade' + i).value;
+            const el = document.getElementById('lee-blade' + i);
+            if (cat) completed++;
+            if (len) completed++;
+            if (cat && len) { el.classList.add('complete'); }
+            else { el.classList.remove('complete'); }
+        }
+
+        // Field notes
+        const notes = document.getElementById('field-notes').value.trim();
+        const notesEl = document.getElementById('notes-container');
+        if (notes.length > 0) { completed++; notesEl.classList.add('complete'); }
+        else { notesEl.classList.remove('complete'); }
+
+        const pct = (completed / total) * 100;
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-text').textContent = completed + ' of ' + total + ' tasks complete';
+        document.getElementById('submit-button').disabled = (completed !== total);
+    }
+
+    // -------------------------------------------------------
+    // WO-2851 Routine Maintenance Progress
+    // -------------------------------------------------------
+    function updateMaintenanceProgress() {
+        let completed = 0;
+        const total = 10; // 9 checkboxes + notes
+
+        const checkIds = [
+            'maint-gearbox-oil', 'maint-gearbox-sample', 'maint-pitch-bearing',
+            'maint-yaw', 'maint-cooling', 'maint-main-bearing',
+            'maint-brake', 'maint-torque', 'maint-safety'
+        ];
+
+        const containerMap = {
+            'maint-gearbox-oil':    'mcheck-gearbox-oil',
+            'maint-gearbox-sample': 'mcheck-gearbox-sample',
+            'maint-pitch-bearing':  'mcheck-pitch-bearing',
+            'maint-yaw':            'mcheck-yaw',
+            'maint-cooling':        'mcheck-cooling',
+            'maint-main-bearing':   'mcheck-main-bearing',
+            'maint-brake':          'mcheck-brake',
+            'maint-torque':         'mcheck-torque',
+            'maint-safety':         'mcheck-safety'
+        };
+
+        checkIds.forEach(id => {
+            const cb = document.getElementById(id);
+            const row = document.getElementById(containerMap[id]);
+            if (cb.checked) { completed++; row.classList.add('complete'); }
+            else { row.classList.remove('complete'); }
+        });
+
+        // Notes
+        const notes = document.getElementById('maint-field-notes').value.trim();
+        const notesEl = document.getElementById('maint-notes-container');
+        if (notes.length > 0) { completed++; notesEl.classList.add('complete'); }
+        else { notesEl.classList.remove('complete'); }
+
+        const pct = (completed / total) * 100;
+        document.getElementById('maint-progress-fill').style.width = pct + '%';
+        document.getElementById('maint-progress-text').textContent = completed + ' of ' + total + ' tasks complete';
+        document.getElementById('maint-submit-button').disabled = (completed !== total);
+    }
+
+    // -------------------------------------------------------
+    // WO-2847 Review
+    // -------------------------------------------------------
+    function showReview() {
+        let leeHTML = '';
+        for (let i = 1; i <= 3; i++) {
+            const cat = document.getElementById('category-blade' + i).value;
+            const len = document.getElementById('length-blade' + i).value;
+            leeHTML += '<div class="review-item"><span class="review-label">Blade ' + i + '</span>' +
+                       '<span class="review-value">' + categoryLabels[cat] + ' • ' + len + 'mm</span></div>';
+        }
+        document.getElementById('lee-review-data').innerHTML = leeHTML;
+        document.getElementById('review-notes').textContent = document.getElementById('field-notes').value;
+        showScreen('review-screen');
+    }
+
+    // -------------------------------------------------------
+    // WO-2851 Review
+    // -------------------------------------------------------
+    function showMaintenanceReview() {
+        const checkIds = [
+            'maint-gearbox-oil', 'maint-gearbox-sample', 'maint-pitch-bearing',
+            'maint-yaw', 'maint-cooling', 'maint-main-bearing',
+            'maint-brake', 'maint-torque', 'maint-safety'
+        ];
+
+        let checklistHTML = '';
+        checkIds.forEach(id => {
+            checklistHTML += '<div class="review-item"><span class="review-label">' + maintTaskLabels[id] + '</span>' +
+                             '<span class="review-value">✓ Complete</span></div>';
+        });
+        document.getElementById('maint-review-checklist').innerHTML = checklistHTML;
+        document.getElementById('maint-review-notes').textContent = document.getElementById('maint-field-notes').value;
+        showScreen('maintenance-review-screen');
+    }
+
+    // -------------------------------------------------------
+    // Shared Confirmation
+    // -------------------------------------------------------
+    function confirmSubmission(woNumber, turbineId) {
+        const now = new Date();
+        const timeString = now.toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('confirm-wo-number').textContent = woNumber;
+        document.getElementById('confirm-turbine').textContent = turbineId;
+        document.getElementById('submission-time').textContent = timeString;
+        document.getElementById('confirmation-message-text').textContent =
+            woNumber + ' has been successfully submitted and is now available for review.';
+
+        // Reset Drive link in case of repeat submission in same session
+        const driveLinkEl = document.getElementById('drive-confirm-link');
+        if (driveLinkEl) { driveLinkEl.style.display = 'none'; driveLinkEl.href = '#'; }
+
+        // Build submission payload and save to Drive in background
+        let submissionData = { type: 'unknown', turbine: turbineId };
+        if (woNumber === 'WO-2847') {
+            submissionData = {
+                type: 'blade-inspection',
+                turbine: turbineId,
+                blades: [1, 2, 3].map(i => ({
+                    blade: i,
+                    category: document.getElementById('category-blade' + i).value,
+                    erosionMm: document.getElementById('length-blade' + i).value
+                })),
+                fieldNotes: document.getElementById('field-notes').value
+            };
+        } else if (woNumber === 'WO-2851') {
+            submissionData = {
+                type: 'routine-maintenance',
+                turbine: turbineId,
+                fieldNotes: document.getElementById('maint-field-notes').value
+            };
+        }
+        saveSubmissionToDrive(woNumber, submissionData);
+        logSubmissionToSheets(woNumber, submissionData);
+
+        // -------------------------------------------------------
+        // Phase 3: Cat 5 Escalation Email
+        // Only fires for blade inspection WOs with a cat5 finding
+        // -------------------------------------------------------
+        const emailPanel = document.getElementById('cat5-email-panel');
+        if (emailPanel) emailPanel.style.display = 'none'; // reset from any prior submission
+
+        if (woNumber === 'WO-2847') {
+            const cat5Blades = [1, 2, 3].filter(i =>
+                document.getElementById('category-blade' + i).value === 'cat5'
+            );
+            if (cat5Blades.length > 0) {
+                const emailPayload = {
+                    woNumber,
+                    turbineId,
+                    location: 'North Array, Row 4',
+                    technician: 'F. Henri',
+                    cat5Blades,
+                    blades: [1, 2, 3].map(i => ({
+                        blade: i,
+                        category: document.getElementById('category-blade' + i).value,
+                        length: document.getElementById('length-blade' + i).value
+                    })),
+                    fieldNotes: document.getElementById('field-notes').value
+                };
+                // Show panel in loading state before screen transition
+                if (emailPanel) emailPanel.style.display = 'block';
+                // Trigger async — don't await, let confirmation screen show immediately
+                triggerCat5EscalationEmail(emailPayload);
+            }
+        }
+
+        showScreen('confirmation-screen');
+    }
+
+    // -------------------------------------------------------
+    // Reset and return to list
+    // -------------------------------------------------------
+    function returnToList() {
+        // Reset WO-2847 checkboxes / selects / inputs / notes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('select').forEach(sel => sel.value = '');
+        document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '');
+        document.getElementById('field-notes').value = '';
+        document.getElementById('maint-field-notes').value = '';
+        // Reset AI status labels
+        document.getElementById('ai-status').textContent = '';
+        document.getElementById('maint-ai-status').textContent = '';
+        // Reset Drive status rows
+        for (let i = 1; i <= 3; i++) {
+            const ds = document.getElementById('drive-status-' + i);
+            if (ds) ds.innerHTML = '';
+        }
+        const dcl = document.getElementById('drive-confirm-link');
+        if (dcl) { dcl.style.display = 'none'; dcl.href = '#'; }
+        const sls = document.getElementById('sheets-log-status');
+        if (sls) { sls.style.display = 'none'; sls.textContent = ''; }
+
+        // Phase 3: reset email panel
+        const emailPanel = document.getElementById('cat5-email-panel');
+        if (emailPanel) {
+            emailPanel.style.display = 'none';
+            emailPanel.classList.add('sending');
+            emailPanel.classList.remove('sent', 'failed');
+        }
+        const badge = document.getElementById('cat5-status-badge');
+        if (badge) {
+            badge.textContent = '⏳ Drafting…';
+            badge.classList.remove('sent', 'failed');
+        }
+        const subjEl = document.getElementById('cat5-email-subject');
+        if (subjEl) subjEl.textContent = 'Generating…';
+        const prevEl = document.getElementById('cat5-email-preview');
+        if (prevEl) prevEl.textContent = 'Claude is drafting the escalation email…';
+
+        showScreen('list-screen');
+    }
+
+    // -------------------------------------------------------
+    // AI Field Notes — WO-2847 Blade Inspection
+    // -------------------------------------------------------
+    async function generateFieldNotes() {
+        const btn = document.getElementById('ai-generate-btn');
+        const status = document.getElementById('ai-status');
+
+        const blade1checked = document.getElementById('inspection-blade1').checked;
+        const blade2checked = document.getElementById('inspection-blade2').checked;
+        const blade3checked = document.getElementById('inspection-blade3').checked;
+        const photoDone = document.getElementById('photo-doc').checked;
+
+        const cat1 = document.getElementById('category-blade1').value;
+        const cat2 = document.getElementById('category-blade2').value;
+        const cat3 = document.getElementById('category-blade3').value;
+        const len1 = document.getElementById('length-blade1').value;
+        const len2 = document.getElementById('length-blade2').value;
+        const len3 = document.getElementById('length-blade3').value;
+
+        const hasAnyData = blade1checked || blade2checked || blade3checked || cat1 || cat2 || cat3;
+        if (!hasAnyData) {
+            status.textContent = 'Complete at least some inspection fields first.';
+            status.style.color = '#e53e3e';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-loading">✦ Generating...</span>';
+        status.style.color = '#667eea';
+        status.textContent = 'Analyzing inspection data...';
+
+        const bladeData = [
+            { blade: 1, inspected: blade1checked, category: cat1, length: len1 },
+            { blade: 2, inspected: blade2checked, category: cat2, length: len2 },
+            { blade: 3, inspected: blade3checked, category: cat3, length: len3 },
+        ];
+
+        const bladeDescriptions = bladeData.map(b => {
+            let desc = 'Blade ' + b.blade + ': inspection ' + (b.inspected ? 'complete' : 'not completed');
+            if (b.category) desc += ', LEE category: ' + categoryLabels[b.category];
+            if (b.length) desc += ', erosion length: ' + b.length + 'mm';
+            return desc;
+        }).join('\n');
+
+        const prompt = 'You are a wind turbine field technician writing a concise work order field note after completing a blade inspection on Turbine T-142 (Work Order WO-2847) at Dacha Bay Wind Farm.\n\nInspection data collected:\n' + bladeDescriptions + '\nPhoto documentation: ' + (photoDone ? 'captured' : 'not yet captured') + '\n\nWrite a professional, plain-language field note (3-5 sentences) summarising:\n1. What was inspected and completed\n2. The erosion findings per blade with urgency implications\n3. A clear recommended next action based on the worst category found\n\nUse direct, field-report language. No bullet points. Write in first person past tense as the technician.';
+
+        try {
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "anthropic-dangerous-direct-browser-access": "true"
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
+
+            const data = await response.json();
+            const generatedText = data.content?.[0]?.text || '';
+
+            if (generatedText) {
+                document.getElementById('field-notes').value = generatedText;
+                updateProgress();
+                status.textContent = '✓ Draft generated — review and edit as needed.';
+                status.style.color = '#10b981';
+            } else {
+                throw new Error('Empty response');
+            }
+        } catch (err) {
+            status.textContent = 'Generation failed. Please type your notes manually.';
+            status.style.color = '#e53e3e';
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '✦ Regenerate Draft Notes';
+    }
+
+    // -------------------------------------------------------
+    // AI Field Notes — WO-2851 Routine Maintenance
+    // -------------------------------------------------------
+    async function generateMaintenanceNotes() {
+        const btn = document.getElementById('maint-ai-generate-btn');
+        const status = document.getElementById('maint-ai-status');
+
+        const checkIds = [
+            'maint-gearbox-oil', 'maint-gearbox-sample', 'maint-pitch-bearing',
+            'maint-yaw', 'maint-cooling', 'maint-main-bearing',
+            'maint-brake', 'maint-torque', 'maint-safety'
+        ];
+
+        const completedTasks = checkIds.filter(id => document.getElementById(id).checked);
+
+        if (completedTasks.length === 0) {
+            status.textContent = 'Complete at least some maintenance tasks first.';
+            status.style.color = '#e53e3e';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-loading">✦ Generating...</span>';
+        status.style.color = '#667eea';
+        status.textContent = 'Analyzing maintenance data...';
+
+        const completedList = completedTasks.map(id => maintTaskLabels[id]).join('\n');
+        const pendingTasks = checkIds.filter(id => !document.getElementById(id).checked);
+        const pendingList = pendingTasks.length > 0
+            ? pendingTasks.map(id => maintTaskLabels[id]).join('\n')
+            : 'None — all tasks completed';
+
+        const prompt = 'You are a wind turbine field technician writing a concise work order field note after completing routine maintenance on Turbine T-156 (Work Order WO-2851) at Dacha Bay Wind Farm.\n\nCompleted tasks:\n' + completedList + '\n\nPending tasks:\n' + pendingList + '\n\nWrite a professional, plain-language field note (3-5 sentences) summarising:\n1. What maintenance was completed\n2. Any notable findings (e.g. fluid condition, wear levels, anything outside normal parameters)\n3. Recommended follow-up if any tasks are pending, or confirmation that the turbine is cleared for return to service if all tasks are done\n\nUse direct, field-report language. No bullet points. Write in first person past tense as the technician. If all tasks are complete, confirm the turbine is ready to return to operation.';
+
+        try {
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "anthropic-dangerous-direct-browser-access": "true"
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
+
+            const data = await response.json();
+            const generatedText = data.content?.[0]?.text || '';
+
+            if (generatedText) {
+                document.getElementById('maint-field-notes').value = generatedText;
+                updateMaintenanceProgress();
+                status.textContent = '✓ Draft generated — review and edit as needed.';
+                status.style.color = '#10b981';
+            } else {
+                throw new Error('Empty response');
+            }
+        } catch (err) {
+            status.textContent = 'Generation failed. Please type your notes manually.';
+            status.style.color = '#e53e3e';
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '✦ Regenerate Draft Notes';
+    }
+
+    // -------------------------------------------------------
+    // Init
+    // -------------------------------------------------------
+    updateProgress();
+    updateMaintenanceProgress();
+
+    // =============================================
+    // PHASE 2.5 — PHOTO UPLOAD & AI VISION
+    // =============================================
+
+    // Track which categories were AI-suggested vs manually set
+    const aiSuggestedCategory = { 1: null, 2: null, 3: null };
+
+    // Trigger the hidden file input
+    function triggerPhotoUpload(bladeNum) {
+        const zone = document.getElementById('photo-zone-' + bladeNum);
+        if (zone.classList.contains('has-photo') || zone.classList.contains('analysing')) return;
+        document.getElementById('photo-input-' + bladeNum).click();
+    }
+
+    // Handle photo selection
+    function handlePhotoUpload(bladeNum, input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+
+        // Show thumbnail in upload zone
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result; // full data URL for thumbnail
+            const base64Pure = base64Data.split(',')[1]; // just the base64 for API
+            const mimeType = file.type;
+
+            // Update the zone UI
+            const zone = document.getElementById('photo-zone-' + bladeNum);
+            zone.classList.add('has-photo');
+            zone.innerHTML =
+                '<img class="photo-thumbnail" src="' + base64Data + '" alt="Blade ' + bladeNum + ' photo">' +
+                '<div class="photo-upload-text">' +
+                    '<div class="photo-upload-label">📷 ' + file.name + '</div>' +
+                    '<div class="photo-upload-sublabel">Analysing with Claude Vision…</div>' +
+                '</div>';
+
+            // Show analysing indicator
+            document.getElementById('vision-status-' + bladeNum).style.display = 'flex';
+
+            // Call Claude Vision
+            analysePhotoWithVision(bladeNum, base64Pure, mimeType);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // =============================================
+    // DRIVE STORAGE FUNCTIONS
+    // =============================================
+
+    // Save a blade photo to Google Drive.
+    // Called after Claude Vision completes — fire-and-forget, never blocks the tech.
+    async function savePhotoToDrive(bladeNum, base64Data, mimeType, filename, category) {
+        if (!DRIVE_ENDPOINT) return; // Drive not configured — silent no-op
+
+        const statusEl = document.getElementById('drive-status-' + bladeNum);
+        if (statusEl) statusEl.innerHTML = '<span class="drive-saving">📁 Saving to Drive…</span>';
+
+        const ext = (mimeType || 'image/png').split('/')[1] || 'png';
+        const fname = filename || ('WO-2847_blade' + bladeNum + '_photo_' + Date.now() + '.' + ext);
+
+        try {
+            // no-cors required when running as a local file (origin: null).
+            // Must use text/plain — application/json triggers a preflight
+            // even in no-cors mode and gets silently blocked by the browser.
+            // Apps Script reads the body via e.postData.contents regardless.
+            await fetch(DRIVE_ENDPOINT, {
+                method: 'POST',
+                mode:   'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    type:      'photo',
+                    woNumber:  'WO-2847',
+                    bladeNum:  bladeNum,
+                    imageData: base64Data,
+                    mimeType:  mimeType,
+                    filename:  fname,
+                    category:  category,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            // Response is opaque — assume success if no exception thrown
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="drive-saved-link">📁 Saved to Drive</span>';
+            }
+        } catch (err) {
+            if (statusEl) statusEl.innerHTML = '<span class="drive-error">Drive save failed — photo not stored</span>';
+        }
+    }
+
+    // Save a completed work order submission to Google Drive as JSON.
+    // Called from confirmSubmission() — stores the full data payload.
+    async function saveSubmissionToDrive(woNumber, submissionData) {
+        if (!DRIVE_ENDPOINT) return; // Drive not configured — silent no-op
+
+        const confirmLinkEl = document.getElementById('drive-confirm-link');
+
+        try {
+            // no-cors required when running as a local file (origin: null).
+            // Must use text/plain — application/json triggers a preflight
+            // even in no-cors mode and gets silently blocked by the browser.
+            await fetch(DRIVE_ENDPOINT, {
+                method: 'POST',
+                mode:   'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    type:      'submission',
+                    woNumber:  woNumber,
+                    woType:    submissionData.type,
+                    submitted: new Date().toISOString(),
+                    data:      submissionData
+                })
+            });
+
+            // Assume success — show static confirmation (no URL available with no-cors)
+            if (confirmLinkEl) {
+                confirmLinkEl.textContent = '📁 Submission saved to Drive';
+                confirmLinkEl.removeAttribute('href');
+                confirmLinkEl.style.cursor = 'default';
+                confirmLinkEl.style.display = 'inline-block';
+            }
+        } catch (err) {
+            // Silent fail — don't disrupt the confirmation screen
+            console.warn('Drive submission save failed:', err);
+        }
+    }
+
+    // =============================================
+    // PHASE 5 — GOOGLE SHEETS LOGGING
+    // Fires after every confirmation. Sends a "log" payload to the
+    // Apps Script endpoint, which appends a row to the Inspections
+    // Log Sheet. Silent — UI not blocked, status shown after return.
+    // =============================================
+    async function logSubmissionToSheets(woNumber, submissionData) {
+        if (!DRIVE_ENDPOINT) return; // endpoint not configured — silent no-op
+
+        const statusEl = document.getElementById('sheets-log-status');
+
+        // Show pending indicator immediately
+        if (statusEl) {
+            statusEl.textContent = '📊 Logging to Sheets…';
+            statusEl.style.color = '#667eea';
+            statusEl.style.display = 'block';
+        }
+
+        // Build the category label from the raw value
+        const catLabel = (val) => categoryLabels[val] || val || '';
+
+        // Resolve blade data — only present for blade inspection WOs
+        const blades = (submissionData.blades || []).map(b => ({
+            blade:      b.blade,
+            category:   catLabel(b.category),
+            erosionMm:  b.erosionMm || ''
+        }));
+
+        // Resolve work order metadata from manager card data attributes
+        const cardEl     = document.getElementById('mgr-card-' + woNumber);
+        const location   = cardEl ? (cardEl.dataset.location || '') : '';
+        const technician = cardEl ? (cardEl.dataset.tech     || '') : '';
+        const status     = cardEl ? (cardEl.dataset.status   || '') : '';
+
+        const typeLabels = {
+            'blade-inspection':    'Blade Inspection & LEE Assessment',
+            'routine-maintenance': 'Routine Maintenance'
+        };
+
+        const payload = {
+            type:       'log',
+            woNumber:   woNumber,
+            turbine:    submissionData.turbine || '',
+            location:   location,
+            woType:     typeLabels[submissionData.type] || submissionData.type || '',
+            technician: technician,
+            status:     status,
+            blades:     blades,
+            fieldNotes: submissionData.fieldNotes || submissionData.notes || '',
+            submitted:  new Date().toISOString()
+        };
+
+        try {
+            await fetch(DRIVE_ENDPOINT, {
+                method:  'POST',
+                mode:    'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body:    JSON.stringify(payload)
+            });
+
+            // Assume success — no-cors means response body is unreadable
+            if (statusEl) {
+                statusEl.textContent = '📊 Logged to Sheets';
+                statusEl.style.color = '#10b981';
+            }
+        } catch (err) {
+            console.warn('Sheets log failed:', err);
+            if (statusEl) statusEl.style.display = 'none';
+        }
+    }
+
+    // =============================================
+    // =============================================
+    // PHASE 3 — CAT 5 ESCALATION EMAIL
+    // =============================================
+    //
+    // Two-step process:
+    //   Step 1 — Call Claude API directly to generate the email body text
+    //   Step 2 — POST subject + body to Apps Script (DRIVE_ENDPOINT),
+    //            which calls GmailApp.createDraft() server-side
+    //
+    // No MCP. No Gmail connector. Just Claude for writing, Apps Script for acting.
+    // Requires: Drive_Script_v2.gs deployed with Gmail scope authorised.
+    // =============================================
+    async function triggerCat5EscalationEmail(emailData) {
+        const panel  = document.getElementById('cat5-email-panel');
+        const badge  = document.getElementById('cat5-status-badge');
+        const toEl   = document.getElementById('cat5-email-to');
+        const subjEl = document.getElementById('cat5-email-subject');
+        const prevEl = document.getElementById('cat5-email-preview');
+
+        // Initialise panel in drafting state
+        panel.classList.add('sending');
+        toEl.textContent   = 'To: ' + ESCALATION_RECIPIENT;
+        badge.textContent  = '⏳ Drafting…';
+        subjEl.textContent = 'Generating…';
+        prevEl.textContent = 'Claude is drafting the escalation email…';
+
+        const submittedAt = new Date().toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        const cat5Lines = emailData.cat5Blades.map(i => {
+            const b = emailData.blades.find(x => x.blade === i);
+            return 'Blade ' + i + ': ' + (categoryLabels[b.category] || b.category) +
+                   ' — ' + (b.length || '?') + 'mm erosion';
+        }).join('\n');
+
+        const allBladesLines = emailData.blades.map(b =>
+            'Blade ' + b.blade + ': ' + (categoryLabels[b.category] || 'Not assessed') +
+            (b.length ? ', ' + b.length + 'mm' : '')
+        ).join('\n');
+
+        const emailSubject = '[CAT 5 ALERT] ' + emailData.woNumber +
+            ' · Turbine ' + emailData.turbineId + ' · Blade Erosion — Immediate Action Required';
+
+        const prompt = 'Write the body of a Cat 5 escalation email for a wind turbine inspection system.\n\n' +
+            'Work order: ' + emailData.woNumber + '\n' +
+            'Turbine: ' + emailData.turbineId + '\n' +
+            'Location: ' + emailData.location + '\n' +
+            'Technician: ' + emailData.technician + '\n' +
+            'Submitted: ' + submittedAt + '\n\n' +
+            'Cat 5 findings requiring immediate action:\n' + cat5Lines + '\n\n' +
+            'Full blade assessment:\n' + allBladesLines + '\n\n' +
+            'Technician field notes:\n' + (emailData.fieldNotes || 'No field notes recorded.') + '\n\n' +
+            'Write a professional plain-language email body structured into exactly 5 paragraphs separated by blank lines:\n' +
+            'Paragraph 1 (1 sentence): Cat 5 finding identified on this turbine requiring immediate action.\n' +
+            'Paragraph 2 (2 sentences): The specific Cat 5 blade findings with erosion measurements, and what Cat 5 means operationally.\n' +
+            'Paragraph 3 (2 sentences): Work order number, submitting technician, and required immediate actions (shutdown + repair team within 48 hours).\n' +
+            'Paragraph 4 (1–2 sentences): Any other blade findings (Cat 1/Cat 3) to address during the repair window. Omit if all blades are Cat 5.\n' +
+            'Paragraph 5 (1 sentence): Full inspection data is available in the work order system.\n\n' +
+            'Separate paragraphs with a blank line. No bullet points. No subject line. No greeting or sign-off. Body text only.';
+
+        try {
+            // ── Step 1: Generate email body via Claude API ──────────────
+            const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 600,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
+
+            const claudeData = await claudeResponse.json();
+            const emailBody  = claudeData.content?.[0]?.text?.trim() || '';
+
+            if (!emailBody) throw new Error('Claude returned empty email body');
+
+            // Show preview immediately — we already have the text
+            subjEl.textContent = emailSubject;
+            prevEl.textContent = emailBody.split('\n').filter(l => l.trim()).slice(0, 4).join('\n');
+
+            // ── Step 2: POST to Apps Script to create the Gmail draft ───
+            // Fire-and-forget with no-cors (same pattern as Drive photo/submission saving).
+            // We already have the body to display — draft creation runs in background.
+            await fetch(DRIVE_ENDPOINT, {
+                method: 'POST',
+                mode:   'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    type:      'draft',
+                    woNumber:  emailData.woNumber,
+                    to:        ESCALATION_RECIPIENT,
+                    subject:   emailSubject,
+                    body:      emailBody,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            // Assume success — no-cors response is opaque, no confirmation available
+            panel.classList.remove('sending');
+            badge.textContent = '✓ Draft Created';
+            badge.classList.add('sent');
+
+        } catch (err) {
+            panel.classList.remove('sending');
+            badge.textContent  = '✗ Failed';
+            badge.classList.add('failed');
+            subjEl.textContent = emailSubject;
+            prevEl.textContent = 'Draft could not be created automatically. ' +
+                'Please notify the site manager manually and reference ' + emailData.woNumber + '.';
+            console.error('Cat 5 escalation draft error:', err);
+        }
+    }
+
+    // Call Claude Vision API and process result
+    async function analysePhotoWithVision(bladeNum, base64Data, mimeType) {
+        const visionPrompt = `You are an AI assistant helping a wind turbine field technician assess blade damage from a photo.
+
+Examine the image carefully. Based on what you can see, classify the damage according to this scale:
+- Cat 1 (Cosmetic): Surface coating loss, minor paint erosion, no structural concern
+- Cat 3 (Planned Repair): Moderate leading edge erosion, fibreglass exposure, repair needed at next shutdown
+- Cat 5 (Urgent): Severe delamination, deep structural erosion, active damage — immediate shutdown required
+
+Respond ONLY with a valid JSON object in this exact format, nothing else:
+{"category": "cat1", "rationale": "One sentence describing what you see and why you chose this category."}
+
+Use "cat1", "cat3", or "cat5" as the category value. If the image does not show a wind turbine blade or damage is not visible, use "cat1" and note that in the rationale.`;
+
+        try {
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "anthropic-dangerous-direct-browser-access": "true"
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 200,
+                    messages: [{
+                        role: "user",
+                        content: [
+                            { type: "image", source: { type: "base64", media_type: mimeType, data: base64Data } },
+                            { type: "text", text: visionPrompt }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            const rawText = (data.content?.[0]?.text || '').trim();
+
+            // Parse JSON response
+            let parsed;
+            try {
+                // Strip any accidental markdown fences
+                const clean = rawText.replace(/```json|```/g, '').trim();
+                parsed = JSON.parse(clean);
+            } catch (e) {
+                throw new Error('JSON parse failed: ' + rawText);
+            }
+
+            const suggestedCat = parsed.category;
+            const rationale = parsed.rationale;
+
+            if (!suggestedCat || !rationale) throw new Error('Incomplete response');
+
+            // Pre-fill the dropdown
+            const select = document.getElementById('category-blade' + bladeNum);
+            select.value = suggestedCat;
+            aiSuggestedCategory[bladeNum] = suggestedCat;
+
+            // Show AI badge on label
+            document.getElementById('ai-badge-' + bladeNum).innerHTML =
+                '<span class="ai-suggested-badge">AI suggested</span>';
+
+            // Show rationale box
+            document.getElementById('ai-rationale-' + bladeNum).textContent = rationale;
+            document.getElementById('ai-suggestion-' + bladeNum).classList.add('visible');
+
+            // Update zone sublabel
+            const zone = document.getElementById('photo-zone-' + bladeNum);
+            const sub = zone.querySelector('.photo-upload-sublabel');
+            if (sub) sub.textContent = '✓ AI analysis complete';
+
+            updateProgress();
+
+            // Save photo to Drive in the background — non-blocking
+            savePhotoToDrive(bladeNum, base64Data, mimeType, null, suggestedCat);
+
+        } catch (err) {
+            // Graceful failure — let tech fill in manually
+            const zone = document.getElementById('photo-zone-' + bladeNum);
+            const sub = zone.querySelector('.photo-upload-sublabel');
+            if (sub) sub.textContent = 'Analysis failed — please select category manually.';
+        }
+
+        // Always hide the analysing indicator
+        document.getElementById('vision-status-' + bladeNum).style.display = 'none';
+    }
+
+    // Called when tech changes category dropdown
+    // If it was AI-suggested and they changed it, swap badge to "Modified"
+    function onCategoryChange(bladeNum) {
+        const select = document.getElementById('category-blade' + bladeNum);
+        const badge = document.getElementById('ai-badge-' + bladeNum);
+        const suggestionBox = document.getElementById('ai-suggestion-' + bladeNum);
+
+        if (aiSuggestedCategory[bladeNum] !== null) {
+            if (select.value !== aiSuggestedCategory[bladeNum]) {
+                badge.innerHTML = '<span class="ai-modified-badge">Modified</span>';
+                if (suggestionBox) {
+                    const header = suggestionBox.querySelector('.ai-suggestion-header');
+                    if (header) header.textContent = '✦ AI Assessment (overridden)';
+                }
+            } else {
+                badge.innerHTML = '<span class="ai-suggested-badge">AI suggested</span>';
+                if (suggestionBox) {
+                    const header = suggestionBox.querySelector('.ai-suggestion-header');
+                    if (header) header.textContent = '✦ AI Assessment';
+                }
+            }
+        }
+        updateProgress();
+    }
+
+
+
+    // Pre-baked data for all 7 work orders as the manager sees them.
+    // This represents submitted/current data from the field.
+    const managerWOData = {
+        'WO-2847': {
+            wo: 'WO-2847', turbine: 'T-142', location: 'North Array, Row 4',
+            model: 'Vestas V150-4.5', lastService: '14 Nov 2025',
+            technician: 'F. Henri', type: 'Blade Inspection & LEE Assessment',
+            status: 'in-progress', statusLabel: 'In Progress',
+            progress: '8 of 11 tasks complete', lastActivity: '2 hours ago',
+            submittedAt: null,
+            inspections: [
+                { label: 'Blade 1 Visual Inspection', complete: true },
+                { label: 'Blade 2 Visual Inspection', complete: true },
+                { label: 'Blade 3 Visual Inspection', complete: true },
+                { label: 'Photo Documentation', complete: true },
+            ],
+            leeData: [
+                { blade: 1, category: 'Cat 3: Repair During Planned Shutdown', length: 380, urgent: false },
+                { blade: 2, category: 'Cat 1: Cosmetic', length: 95, urgent: false },
+                { blade: 3, category: null, length: null, urgent: false },
+            ],
+            notes: null,
+        },
+        'WO-2851': {
+            wo: 'WO-2851', turbine: 'T-156', location: 'South Array, Row 2',
+            model: 'Vestas V150-4.5', lastService: '22 Oct 2025',
+            technician: 'L. Moholy', type: 'Routine Maintenance',
+            status: 'in-progress', statusLabel: 'In Progress',
+            progress: '0 of 10 tasks complete', lastActivity: 'Not yet started',
+            submittedAt: null,
+            notes: null,
+        },
+        'WO-2859': {
+            wo: 'WO-2859', turbine: 'T-203', location: 'North Array, Row 7',
+            model: 'Vestas V150-4.5', lastService: '03 Sep 2025',
+            technician: 'F. Henri', type: 'Blade Inspection & LEE Assessment',
+            status: 'escalated', statusLabel: 'Escalated',
+            submittedAt: '04 Mar 2026, 14:23',
+            escalationReason: 'Cat 5 finding on Blade 2 — 520mm leading edge erosion with laminate exposure and active delamination. Immediate turbine shutdown required per site safety protocol.',
+            inspections: [
+                { label: 'Blade 1 Visual Inspection', complete: true },
+                { label: 'Blade 2 Visual Inspection', complete: true },
+                { label: 'Blade 3 Visual Inspection', complete: true },
+                { label: 'Photo Documentation', complete: true },
+            ],
+            leeData: [
+                { blade: 1, category: 'Cat 1: Cosmetic', length: 110, urgent: false },
+                { blade: 2, category: 'Cat 5: Immediate Shutdown / Urgent Repair', length: 520, urgent: true },
+                { blade: 3, category: 'Cat 3: Repair During Planned Shutdown', length: 295, urgent: false },
+            ],
+            notes: 'Completed full LEE assessment on T-203 at North Array Row 7. Blades 1 and 3 show erosion consistent with seasonal wear — Cat 1 and Cat 3 findings respectively. Blade 2 presents a Cat 5 condition with 520mm of leading edge erosion extending from the tip, with significant laminate exposure and active delamination visible. Turbine flagged for immediate shutdown per site protocol. Photo documentation captured and uploaded. Recommend emergency repair team deployment within 48 hours.',
+        },
+        'WO-2863': {
+            wo: 'WO-2863', turbine: 'T-178', location: 'East Array, Row 1',
+            model: 'Vestas V150-4.5', lastService: '11 Oct 2025',
+            technician: 'D. Maar', type: 'Blade Inspection & LEE Assessment',
+            status: 'awaiting-parts', statusLabel: 'Awaiting Parts',
+            submittedAt: '02 Mar 2026, 09:41',
+            inspections: [
+                { label: 'Blade 1 Visual Inspection', complete: true },
+                { label: 'Blade 2 Visual Inspection', complete: true },
+                { label: 'Blade 3 Visual Inspection', complete: true },
+                { label: 'Photo Documentation', complete: true },
+            ],
+            leeData: [
+                { blade: 1, category: 'Cat 3: Repair During Planned Shutdown', length: 210, urgent: false },
+                { blade: 2, category: 'Cat 3: Repair During Planned Shutdown', length: 330, urgent: false },
+                { blade: 3, category: 'Cat 3: Repair During Planned Shutdown', length: 185, urgent: false },
+            ],
+            notes: 'Inspected all three blades on T-178. All blades present Cat 3 leading edge erosion requiring repair during next planned shutdown. Parts request submitted for blade repair kit and leading edge protection tape. Turbine cleared to continue operation pending scheduled maintenance window.',
+            partsRequested: 'LEP repair kit (×3) · Leading edge protection tape, 10m · Fibreglass resin set',
+        },
+        'WO-2871': {
+            wo: 'WO-2871', turbine: 'T-115', location: 'South Array, Row 5',
+            model: 'Vestas V150-4.5', lastService: '05 Mar 2026',
+            technician: 'L. Moholy', type: 'Routine Maintenance',
+            status: 'complete', statusLabel: 'Complete',
+            submittedAt: '05 Mar 2026, 16:12',
+            tasks: [
+                'Gearbox oil level checked and topped up',
+                'Gearbox oil sample taken for analysis',
+                'Pitch bearing lubrication completed',
+                'Yaw system inspection completed',
+                'Cooling system check completed',
+                'Main bearing lubrication completed',
+                'Brake system inspection completed',
+                'Torque checks on hub and nacelle fasteners',
+                'Safety system test completed',
+            ],
+            notes: 'Completed full routine maintenance on T-115 at South Array Row 5. All lubrication tasks performed to specification. Gearbox oil level was slightly below minimum on arrival — topped up and oil sample taken for lab analysis. Cooling system operating within normal parameters. All safety systems tested and confirmed operational. Turbine cleared for return to service.',
+        },
+        'WO-2876': {
+            wo: 'WO-2876', turbine: 'T-199', location: 'East Array, Row 3',
+            model: 'Vestas V150-4.5', lastService: '28 Jan 2026',
+            technician: 'D. Maar', type: 'Blade Inspection & LEE Assessment',
+            status: 'assigned', statusLabel: 'Assigned',
+            submittedAt: null, notes: null,
+        },
+        'WO-2882': {
+            wo: 'WO-2882', turbine: 'T-087', location: 'West Array, Row 2',
+            model: 'Vestas V150-4.5', lastService: '15 Dec 2025',
+            technician: 'S. Delaunay', type: 'Routine Maintenance',
+            status: 'assigned', statusLabel: 'Assigned',
+            submittedAt: null, notes: null,
+        },
+    };
+
+    // Switch between Technician and Manager role
+    function switchRole(role) {
+        if (role === 'manager') {
+            showScreen('manager-dashboard-screen');
+        } else {
+            showScreen('list-screen');
+        }
+    }
+
+    // Open a read-only manager detail view for any work order
+    function openManagerDetail(woId) {
+        const wo = managerWOData[woId];
+        if (!wo) return;
+
+        // Header
+        document.getElementById('mgr-wo-number').textContent = wo.wo;
+        document.getElementById('mgr-turbine-subtitle').textContent = wo.turbine + ' · ' + wo.type;
+
+        // Status badge
+        const badge = document.getElementById('mgr-status-badge');
+        badge.textContent = wo.statusLabel;
+        badge.className = 'status-badge status-' + wo.status;
+
+        // Turbine metadata strip
+        document.getElementById('mgr-turbine-meta').innerHTML =
+            '<div class="meta-item"><span class="meta-label">Wind Farm</span><span class="meta-value">Dacha Bay</span></div>' +
+            '<div class="meta-item"><span class="meta-label">Turbine Model</span><span class="meta-value">' + wo.model + '</span></div>' +
+            '<div class="meta-item"><span class="meta-label">Last Service</span><span class="meta-value">' + wo.lastService + '</span></div>' +
+            '<div class="meta-item"><span class="meta-label">Location</span><span class="meta-value">' + wo.location + '</span></div>' +
+            '<div class="meta-item"><span class="meta-label">Technician</span><span class="meta-value">' + wo.technician + '</span></div>';
+
+        // Escalation alert block
+        document.getElementById('mgr-escalation-block').innerHTML = (wo.status === 'escalated')
+            ? '<div class="manager-escalation-alert">' +
+              '<div class="manager-escalation-alert-title">⚠️ Active Escalation</div>' +
+              '<div class="manager-escalation-alert-detail">' + wo.escalationReason + '</div>' +
+              '</div>'
+            : '';
+
+        // Submission / progress metadata
+        let metaHTML = '';
+        if (wo.submittedAt) {
+            metaHTML = '<div class="submission-meta">' +
+                '<span><strong>Submitted by:</strong> ' + wo.technician + '</span>' +
+                '<span><strong>Submitted:</strong> ' + wo.submittedAt + '</span>' +
+                '<span><strong>Status:</strong> ' + wo.statusLabel + '</span>' +
+                '</div>';
+        } else if (wo.progress) {
+            metaHTML = '<div class="submission-meta">' +
+                '<span><strong>Technician:</strong> ' + wo.technician + '</span>' +
+                '<span><strong>Progress:</strong> ' + wo.progress + '</span>' +
+                '<span><strong>Last activity:</strong> ' + wo.lastActivity + '</span>' +
+                '</div>';
+        } else {
+            metaHTML = '<div class="submission-meta">' +
+                '<span><strong>Assigned to:</strong> ' + wo.technician + '</span>' +
+                '<span><strong>Status:</strong> Not yet started</span>' +
+                '</div>';
+        }
+        document.getElementById('mgr-submission-meta').innerHTML = metaHTML;
+
+        // Main data block
+        let dataHTML = '';
+        if (wo.leeData) {
+            // LEE assessment data
+            dataHTML += '<div class="detail-data-group">' +
+                '<div class="detail-data-label">Leading Edge Erosion Assessment</div>';
+            wo.leeData.forEach(function(b) {
+                if (b.category) {
+                    dataHTML += '<div class="detail-data-row">' +
+                        '<span class="detail-data-row-label">Blade ' + b.blade + '</span>' +
+                        '<span class="detail-data-row-value' + (b.urgent ? ' urgent' : '') + '">' +
+                        b.category + ' &nbsp;·&nbsp; ' + b.length + 'mm' + (b.urgent ? ' &nbsp;⚠️' : '') +
+                        '</span></div>';
+                } else {
+                    dataHTML += '<div class="detail-data-row">' +
+                        '<span class="detail-data-row-label">Blade ' + b.blade + '</span>' +
+                        '<span class="detail-data-row-value pending">— Not yet assessed</span></div>';
+                }
+            });
+            dataHTML += '</div>';
+
+            // Inspection checklist
+            if (wo.inspections) {
+                dataHTML += '<div class="detail-data-group">' +
+                    '<div class="detail-data-label">Inspections</div>';
+                wo.inspections.forEach(function(item) {
+                    dataHTML += '<div class="detail-data-row">' +
+                        '<span class="detail-data-row-label">' + item.label + '</span>' +
+                        '<span class="detail-data-row-value">' + (item.complete ? '✓ Complete' : '— Pending') + '</span>' +
+                        '</div>';
+                });
+                dataHTML += '</div>';
+            }
+        } else if (wo.tasks) {
+            // Maintenance checklist
+            dataHTML += '<div class="detail-data-group">' +
+                '<div class="detail-data-label">Maintenance Tasks Completed</div>';
+            wo.tasks.forEach(function(task) {
+                dataHTML += '<div class="detail-data-row">' +
+                    '<span class="detail-data-row-label">' + task + '</span>' +
+                    '<span class="detail-data-row-value">✓ Complete</span></div>';
+            });
+            dataHTML += '</div>';
+        } else {
+            dataHTML = '<div class="pending-indicator">No data captured yet — work order has not been started.</div>';
+        }
+
+        // Parts request
+        if (wo.partsRequested) {
+            dataHTML += '<div class="parts-request-box">' +
+                '<strong>📦 Parts Request Submitted</strong>' +
+                wo.partsRequested + '</div>';
+        }
+
+        document.getElementById('mgr-data-block').innerHTML = dataHTML;
+
+        // Field notes
+        document.getElementById('mgr-notes-block').innerHTML = wo.notes
+            ? '<div class="detail-data-group">' +
+              '<div class="detail-data-label">Field Notes</div>' +
+              '<div class="detail-notes-box">' + wo.notes + '</div></div>'
+            : '';
+
+        showScreen('manager-detail-screen');
+    }
+
+    // ============================================================
+    // PHASE 4 — AI TRIAGE & WORK ORDER PRIORITIZATION
+    // ============================================================
+
+    const PRIORITY_ORDER = { 'P1': 1, 'P2': 2, 'P3': 3, 'P4': 4 };
+
+    async function runTriage() {
+        const runBtn   = document.getElementById('triage-run-btn');
+        const retriageBtn = document.getElementById('retriage-btn');
+        const summaryPanel = document.getElementById('triage-summary-panel');
+        const summaryBody  = document.getElementById('triage-summary-body');
+        const promptRow = document.getElementById('triage-prompt-row');
+        const metaRow   = document.getElementById('triage-meta-row');
+        const tsEl      = document.getElementById('triage-timestamp');
+
+        // Loading state
+        if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = '<span class="ai-loading">✦ Triaging...</span>'; }
+        if (retriageBtn) { retriageBtn.disabled = true; retriageBtn.textContent = '✦ Triaging...'; }
+
+        // Build structured data for all 7 work orders
+        const woIds = ['WO-2847','WO-2851','WO-2859','WO-2863','WO-2871','WO-2876','WO-2882'];
+
+        const woSummaries = woIds.map(id => {
+            const wo = managerWOData[id];
+            if (!wo) return null;
+
+            let summary = `Work Order: ${wo.wo}
+Type: ${wo.type}
+Turbine: ${wo.turbine} — ${wo.location}
+Technician: ${wo.technician}
+Status: ${wo.statusLabel}`;
+
+            if (wo.submittedAt) summary += `\nSubmitted: ${wo.submittedAt}`;
+            if (wo.progress)    summary += `\nProgress: ${wo.progress} (Last activity: ${wo.lastActivity})`;
+            if (wo.escalationReason) summary += `\nEscalation: ${wo.escalationReason}`;
+
+            if (wo.leeData) {
+                const leeSummary = wo.leeData.map(b =>
+                    b.category
+                        ? `Blade ${b.blade}: ${b.category}, ${b.length}mm`
+                        : `Blade ${b.blade}: Not yet assessed`
+                ).join('; ');
+                summary += `\nLEE Findings: ${leeSummary}`;
+                const hasCat5 = wo.leeData.some(b => b.urgent);
+                if (hasCat5) summary += '\nCAT 5 PRESENT: Yes';
+            }
+
+            if (wo.partsRequested) summary += `\nParts Requested: ${wo.partsRequested}`;
+            if (wo.notes) summary += `\nField Notes (excerpt): ${wo.notes.substring(0, 120)}...`;
+
+            return summary;
+        }).filter(Boolean).join('\n\n---\n\n');
+
+        const prompt = `You are an AI triage system for a wind turbine operations team at Dacha Bay Wind Farm.
+
+Review the following 7 work orders and assign each a priority tier.
+
+${woSummaries}
+
+Priority tiers:
+P1 Critical — Immediate action required: safety or shutdown risk (Cat 5 findings, active escalations)
+P2 High — Action required within 24 hours (in-progress orders with significant findings, Cat 3 with urgency indicators)
+P3 Medium — Scheduled attention at next maintenance window (Cat 3 findings, awaiting parts, unstarted assigned orders with known blade issues)
+P4 Low — Monitor only, no action required now (routine maintenance in progress, completed orders, newly assigned with no known issues)
+
+Return ONLY a valid JSON array with no other text, markdown, or explanation. Each element must have exactly these fields:
+- "wo": work order number string (e.g. "WO-2847")
+- "priority": one of "P1", "P2", "P3", "P4"
+- "rationale": one sentence (under 15 words) explaining the rank
+- "nextAction": one sentence (under 12 words) describing the recommended next step
+
+Also include a field "summary" on the FIRST element only — a 2-3 sentence plain-language paragraph explaining the overall triage logic for the dispatcher.`;
+
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 1500,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
+
+            const data = await response.json();
+            const rawText = data.content?.[0]?.text || '';
+
+            // Strip markdown fences if present
+            const cleanText = rawText.replace(/```json|```/g, '').trim();
+            const triageResults = JSON.parse(cleanText);
+
+            if (!Array.isArray(triageResults) || triageResults.length === 0) {
+                throw new Error('Invalid triage response structure');
+            }
+
+            // Extract summary from first element if present
+            const overallSummary = triageResults[0].summary || '';
+
+            // Sort by priority
+            triageResults.sort((a, b) =>
+                (PRIORITY_ORDER[a.priority] || 9) - (PRIORITY_ORDER[b.priority] || 9)
+            );
+
+            // Apply priority badges and rationale lines
+            triageResults.forEach(item => {
+                const badgeEl = document.getElementById('priority-' + item.wo);
+                if (badgeEl) {
+                    const tier = item.priority.toLowerCase(); // "p1", "p2" etc.
+                    const labels = { P1: 'P1 Critical', P2: 'P2 High', P3: 'P3 Medium', P4: 'P4 Low' };
+                    badgeEl.textContent = labels[item.priority] || item.priority;
+                    badgeEl.className = 'priority-badge priority-' + tier;
+                    badgeEl.style.display = 'inline-block';
+                }
+
+                const rationaleEl = document.getElementById('rationale-' + item.wo);
+                if (rationaleEl) {
+                    rationaleEl.innerHTML =
+                        '<span>✦ ' + (item.rationale || '') + '</span>' +
+                        (item.nextAction ? '<div class="triage-next-action">→ ' + item.nextAction + '</div>' : '');
+                    rationaleEl.classList.add('visible');
+                }
+            });
+
+            // Reorder cards in the DOM
+            const container = document.getElementById('manager-cards-container');
+            if (container) {
+                triageResults.forEach(item => {
+                    const card = document.getElementById('mgr-card-' + item.wo);
+                    if (card) container.appendChild(card);
+                });
+            }
+
+            // Show summary panel
+            if (overallSummary) {
+                summaryBody.textContent = overallSummary;
+                summaryPanel.classList.add('visible');
+            }
+
+            // Update section label
+            document.getElementById('manager-section-label').textContent = 'Work Orders — Prioritised by AI';
+
+            // Show meta row, hide prompt row
+            promptRow.style.display = 'none';
+            metaRow.classList.add('visible');
+
+            const now = new Date();
+            const ts = now.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            tsEl.textContent = 'Last triaged: ' + ts;
+
+        } catch (err) {
+            console.error('Triage error:', err);
+            // Restore button state on error
+            if (runBtn) { runBtn.disabled = false; runBtn.innerHTML = '✦ Run AI Triage'; }
+            if (retriageBtn) { retriageBtn.disabled = false; retriageBtn.textContent = '✦ Retriage'; }
+            summaryBody.innerHTML = '<span style="color:#e53e3e">Triage failed — please try again.</span>';
+            summaryPanel.classList.add('visible');
+            return;
+        }
+
+        // Restore button states (success)
+        if (runBtn) { runBtn.disabled = false; runBtn.innerHTML = '✦ Run AI Triage'; }
+        if (retriageBtn) { retriageBtn.disabled = false; retriageBtn.textContent = '✦ Retriage'; }
+    }
+    // ============================================================
+    // PHASE 6 — END-OF-DAY SHIFT REPORT GENERATOR
+    // ============================================================
+
+    async function generateShiftReport() {
+        const btn       = document.getElementById('shift-report-btn');
+        const regenBtn  = document.getElementById('shift-report-regen-btn');
+        const promptRow = document.getElementById('shift-report-prompt-row');
+        const metaRow   = document.getElementById('shift-report-meta-row');
+        const panel     = document.getElementById('shift-report-panel');
+        const bodyEl    = document.getElementById('shift-report-body');
+        const tsEl      = document.getElementById('shift-report-timestamp');
+
+        // Loading state
+        if (btn)      { btn.disabled = true;      btn.innerHTML = '<span class="ai-loading">✦ Generating…</span>'; }
+        if (regenBtn) { regenBtn.disabled = true;  regenBtn.textContent = '✦ Generating…'; }
+
+        // Show panel with a loading placeholder
+        panel.classList.add('visible');
+        bodyEl.innerHTML = '<div style="color:#0f766e;font-size:14px;font-style:italic;" class="ai-loading">✦ Analysing all work orders and writing shift report…</div>';
+
+        // ── Build the WO summaries for the prompt ──────────────────────
+        const woIds = ['WO-2847','WO-2851','WO-2859','WO-2863','WO-2871','WO-2876','WO-2882'];
+
+        const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+        const woSummaries = woIds.map(id => {
+            const wo = managerWOData[id];
+            if (!wo) return null;
+
+            let s = `${wo.wo} | ${wo.type} | Turbine: ${wo.turbine} (${wo.location}) | Technician: ${wo.technician} | Status: ${wo.statusLabel}`;
+
+            if (wo.progress)    s += ` | Progress: ${wo.progress} (Last activity: ${wo.lastActivity})`;
+            if (wo.submittedAt) s += ` | Submitted: ${wo.submittedAt}`;
+
+            if (wo.escalationReason) {
+                s += `\n  ESCALATION: ${wo.escalationReason}`;
+            }
+
+            if (wo.leeData) {
+                const leeSummary = wo.leeData.map(b =>
+                    b.category
+                        ? `Blade ${b.blade}: ${b.category}, ${b.length}mm${b.urgent ? ' ⚠️ CAT 5' : ''}`
+                        : `Blade ${b.blade}: Not yet assessed`
+                ).join('; ');
+                s += `\n  LEE Findings: ${leeSummary}`;
+            }
+
+            if (wo.tasks && wo.tasks.length > 0) {
+                s += `\n  Maintenance tasks completed: ${wo.tasks.length}`;
+            }
+
+            if (wo.partsRequested) {
+                s += `\n  Parts requested: ${wo.partsRequested}`;
+            }
+
+            if (wo.notes) {
+                s += `\n  Field notes: ${wo.notes.substring(0, 200)}${wo.notes.length > 200 ? '…' : ''}`;
+            }
+
+            return s;
+        }).filter(Boolean).join('\n\n');
+
+        const prompt = `You are an AI assistant helping a site manager at Dacha Bay Wind Farm prepare an end-of-day shift handover report.
+
+Today's date: ${today}
+
+Here is the status of all 7 work orders for this shift:
+
+${woSummaries}
+
+Write an end-of-day shift report for handover to the next shift. The report must be structured into exactly these 5 labelled sections, each clearly separated. Write in plain prose — no bullet points, no sub-bullets, no numbered lists. Each section should be 2–4 sentences.
+
+SHIFT SUMMARY
+A brief overview of the shift: how many work orders were active, what types of work were carried out, and the overall site status.
+
+COMPLETED THIS SHIFT
+Which work orders were submitted and closed, what was done, and whether any notable findings were made.
+
+IN PROGRESS
+Which work orders are currently open and what remains to be done. Include progress percentages or partial completions where relevant.
+
+ESCALATIONS & URGENT FINDINGS
+Any Cat 5 findings, active escalations, or safety-critical items. If none, say so explicitly. Include what actions have already been taken.
+
+NEXT SHIFT PRIORITIES
+The 3 most important actions for the next shift to act on, in order of urgency. Be specific — name the work order and the required action.
+
+Write in clear, direct field operations language. Write as if you are the outgoing site manager writing for the incoming manager. No greeting, no sign-off.`;
+
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 1200,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
+
+            const data     = await response.json();
+            const rawText  = (data.content?.[0]?.text || '').trim();
+
+            if (!rawText) throw new Error('Empty response from Claude');
+
+            // ── Parse and render the 5 sections ───────────────────────
+            // The model should produce section headings as plain ALL-CAPS labels.
+            // We'll split on known section headers and render each as a block.
+            const sectionDefs = [
+                { key: 'SHIFT SUMMARY',                  icon: '📊' },
+                { key: 'COMPLETED THIS SHIFT',           icon: '✅' },
+                { key: 'IN PROGRESS',                    icon: '🔧' },
+                { key: 'ESCALATIONS & URGENT FINDINGS',  icon: '⚠️' },
+                { key: 'NEXT SHIFT PRIORITIES',          icon: '→'  },
+            ];
+
+            // Build a regex to split on the known headers (case-insensitive)
+            const headerPattern = new RegExp(
+                '(' + sectionDefs.map(s => s.key.replace(/&/g, '&')).join('|') + ')',
+                'gi'
+            );
+
+            const parts = rawText.split(headerPattern).filter(p => p.trim());
+
+            // Pair headers with their following text
+            const sections = [];
+            for (let i = 0; i < parts.length; i++) {
+                const match = sectionDefs.find(s =>
+                    parts[i].trim().toUpperCase().replace(/\s+/g,' ') === s.key
+                );
+                if (match && i + 1 < parts.length) {
+                    sections.push({ def: match, text: parts[i + 1].trim() });
+                    i++; // skip the text part in the next iteration
+                }
+            }
+
+            // If parsing failed (model didn't follow format exactly), fall back to rendering raw
+            let reportHTML = '';
+            let plainText  = 'END-OF-DAY SHIFT REPORT — ' + today + '\n\n';
+
+            if (sections.length >= 3) {
+                sections.forEach(s => {
+                    reportHTML += `<div class="shift-report-section-block">` +
+                        `<div class="shift-report-section-heading">${s.def.icon} ${s.def.key}</div>` +
+                        `<div class="shift-report-section-text">${escapeHtml(s.text).replace(/\n/g, '<br>')}</div>` +
+                        `</div>`;
+                    plainText += s.def.key + '\n' + s.text + '\n\n';
+                });
+            } else {
+                // Fallback: render raw text in a single block
+                reportHTML = `<div class="shift-report-section-text">${escapeHtml(rawText).replace(/\n/g, '<br>')}</div>`;
+                plainText  += rawText;
+            }
+
+            bodyEl.innerHTML = reportHTML;
+            document.getElementById('shift-report-raw-text').value = plainText.trim();
+
+            // Timestamp
+            const now = new Date();
+            const ts = now.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            tsEl.textContent = 'Generated: ' + ts;
+
+            // Swap rows
+            promptRow.style.display = 'none';
+            metaRow.classList.add('visible');
+
+        } catch (err) {
+            console.error('Shift report error:', err);
+            bodyEl.innerHTML = '<div style="color:#be123c;font-size:14px;">Report generation failed — please try again.</div>';
+        }
+
+        // Restore button states
+        if (btn)      { btn.disabled = false;      btn.innerHTML = '✦ Generate Shift Report'; }
+        if (regenBtn) { regenBtn.disabled = false;  regenBtn.textContent = '✦ Regenerate'; }
+    }
+
+    function copyShiftReport() {
+        const rawText = document.getElementById('shift-report-raw-text').value;
+        if (!rawText) return;
+
+        navigator.clipboard.writeText(rawText).then(() => {
+            const copyBtn = document.getElementById('shift-report-copy-btn');
+            const original = copyBtn.textContent;
+            copyBtn.textContent = '✓ Copied';
+            copyBtn.style.color = '#065f46';
+            copyBtn.style.borderColor = '#6ee7b7';
+            setTimeout(() => {
+                copyBtn.textContent = original;
+                copyBtn.style.color = '';
+                copyBtn.style.borderColor = '';
+            }, 2000);
+        }).catch(() => {
+            // Fallback: select the hidden textarea
+            const el = document.getElementById('shift-report-raw-text');
+            el.style.display = 'block';
+            el.select();
+            document.execCommand('copy');
+            el.style.display = 'none';
+        });
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+
+</script>
+</body>
+</html>

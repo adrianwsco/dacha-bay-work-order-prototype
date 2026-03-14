@@ -1232,118 +1232,7 @@
            PHASE 7 — ABOUT PANEL
            ============================================= */
 
-        .about-toggle-btn {
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: rgba(255,255,255,0.9);
-            padding: 6px 13px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
 
-        .about-toggle-btn:hover {
-            background: rgba(255,255,255,0.27);
-            color: white;
-        }
-
-        .about-panel {
-            background: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 20px 24px;
-            display: none;
-            animation: fadeIn 0.2s ease-in;
-        }
-
-        .about-panel.open { display: block; }
-
-        .about-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 14px;
-        }
-
-        .about-panel-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1a365d;
-            margin-bottom: 6px;
-        }
-
-        .about-panel-subtitle {
-            font-size: 13px;
-            color: #64748b;
-            line-height: 1.5;
-            max-width: 640px;
-        }
-
-        .about-close-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            color: #94a3b8;
-            cursor: pointer;
-            padding: 0 0 0 12px;
-            flex-shrink: 0;
-            line-height: 1;
-            font-family: inherit;
-        }
-
-        .about-close-btn:hover { color: #64748b; }
-
-        .about-patterns-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            color: #94a3b8;
-            margin-bottom: 10px;
-        }
-
-        .about-patterns-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 8px;
-        }
-
-        .about-pattern-item {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 7px;
-            padding: 9px 12px;
-            display: flex;
-            align-items: flex-start;
-            gap: 9px;
-        }
-
-        .about-pattern-icon {
-            font-size: 15px;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        .about-pattern-text { flex: 1; }
-
-        .about-pattern-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 2px;
-        }
-
-        .about-pattern-desc {
-            font-size: 11px;
-            color: #64748b;
-            line-height: 1.4;
-        }
 
         /* =============================================
            PHASE 7 — FOOTER
@@ -1382,9 +1271,6 @@
             .stats-row { gap: 6px; }
             .stat-pill { font-size: 11px; padding: 4px 10px; }
 
-            /* About panel grid — single column on mobile */
-            .about-patterns-grid { grid-template-columns: 1fr; }
-
             /* Escalation banner — tighter on mobile */
             .escalation-banner { padding: 12px; }
             .escalation-cta { display: none; }
@@ -1415,7 +1301,134 @@
 
         @media (max-width: 400px) {
             .header h1 { font-size: 18px; }
-            .about-toggle-btn span.about-label { display: none; }
+        }
+
+        /* =============================================
+           PHASE 8 — ABOUT THIS SCREEN MODALS
+           ============================================= */
+
+        .p8-about-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.9);
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .p8-about-btn:hover {
+            background: rgba(255,255,255,0.27);
+            color: white;
+        }
+
+        .p8-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.52);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .p8-overlay.p8-open {
+            display: flex;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .p8-modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 540px;
+            width: 100%;
+            max-height: 84vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+        }
+
+        .p8-modal-hdr {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            color: white;
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .p8-modal-hdr h2 {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .p8-modal-close {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        .p8-modal-close:hover { background: rgba(255,255,255,0.32); }
+
+        .p8-modal-body { padding: 22px 24px 24px; }
+
+        .p8-intro {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 18px;
+        }
+
+        .p8-feature { margin-bottom: 15px; }
+
+        .p8-feature strong {
+            display: block;
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .p8-feature p {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .p8-feature a { color: #667eea; text-decoration: none; }
+        .p8-feature a:hover { text-decoration: underline; }
+
+        .p8-patterns {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 13px;
+            color: #718096;
+            font-style: italic;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -1432,72 +1445,10 @@
                     <button class="role-toggle-btn active" onclick="switchRole('tech')">👷 Technician</button>
                     <button class="role-toggle-btn" onclick="switchRole('manager')">📊 Manager</button>
                 </div>
-                <button class="about-toggle-btn" onclick="toggleAbout('tech-about-panel')">ℹ <span class="about-label">About</span></button>
             </div>
             <h1>Work Orders</h1>
             <div class="subtitle">Dacha Bay Wind Farm — Active Field Operations</div>
-        </div>
-        <!-- About Panel — Technician View -->
-        <div id="tech-about-panel" class="about-panel">
-            <div class="about-panel-header">
-                <div>
-                    <div class="about-panel-title">Dacha Bay Wind Farm — Work Order Prototype</div>
-                    <div class="about-panel-subtitle">A functional AI-powered field operations prototype built as an interview portfolio piece. It demonstrates seven distinct AI implementation patterns in a realistic SaaS operations context. All screens, forms, and AI features are live. Built by Adrian using the Claude API.</div>
-                </div>
-                <button class="about-close-btn" onclick="toggleAbout('tech-about-panel')">✕</button>
-            </div>
-            <div class="about-patterns-label">AI Patterns Demonstrated</div>
-            <div class="about-patterns-grid">
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">✍️</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Structured Output</div>
-                        <div class="about-pattern-desc">AI generates field notes from inspection form data (WO-2847)</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📷</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Multimodal Input</div>
-                        <div class="about-pattern-desc">Claude Vision analyses blade photos and suggests damage categories</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">🧑‍💼</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Human-in-the-Loop</div>
-                        <div class="about-pattern-desc">Technician reviews and accepts or overrides every AI suggestion</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">⚡</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Condition-Triggered Automation</div>
-                        <div class="about-pattern-desc">Cat 5 finding on submission triggers an escalation email draft via Gmail</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">🔢</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Decision Support</div>
-                        <div class="about-pattern-desc">AI triage prioritises all work orders with rationale for the manager</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📊</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Data Persistence</div>
-                        <div class="about-pattern-desc">Every submission logs a row to Google Sheets via Apps Script</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📝</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">AI Reporting Layer</div>
-                        <div class="about-pattern-desc">Manager generates a shift handover report across all work orders in one click</div>
-                    </div>
-                </div>
-            </div>
+            <button class="p8-about-btn" onclick="p8Show('p8-modal-list')">ℹ About this screen</button>
         </div>
         <div class="content">
             <div class="list-header-meta">
@@ -1609,72 +1560,10 @@
                     <button class="role-toggle-btn" onclick="switchRole('tech')">👷 Technician</button>
                     <button class="role-toggle-btn active">📊 Manager</button>
                 </div>
-                <button class="about-toggle-btn" onclick="toggleAbout('mgr-about-panel')">ℹ <span class="about-label">About</span></button>
             </div>
             <h1>Manager Dashboard</h1>
             <div class="subtitle">Dacha Bay Wind Farm — All Work Orders</div>
-        </div>
-        <!-- About Panel — Manager View -->
-        <div id="mgr-about-panel" class="about-panel">
-            <div class="about-panel-header">
-                <div>
-                    <div class="about-panel-title">Dacha Bay Wind Farm — Work Order Prototype</div>
-                    <div class="about-panel-subtitle">A functional AI-powered field operations prototype built as an interview portfolio piece. It demonstrates seven distinct AI implementation patterns in a realistic SaaS operations context. All screens, forms, and AI features are live. Built by Adrian using the Claude API.</div>
-                </div>
-                <button class="about-close-btn" onclick="toggleAbout('mgr-about-panel')">✕</button>
-            </div>
-            <div class="about-patterns-label">AI Patterns Demonstrated</div>
-            <div class="about-patterns-grid">
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">✍️</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Structured Output</div>
-                        <div class="about-pattern-desc">AI generates field notes from inspection form data (WO-2847)</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📷</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Multimodal Input</div>
-                        <div class="about-pattern-desc">Claude Vision analyses blade photos and suggests damage categories</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">🧑‍💼</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Human-in-the-Loop</div>
-                        <div class="about-pattern-desc">Technician reviews and accepts or overrides every AI suggestion</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">⚡</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Condition-Triggered Automation</div>
-                        <div class="about-pattern-desc">Cat 5 finding on submission triggers an escalation email draft via Gmail</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">🔢</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Decision Support</div>
-                        <div class="about-pattern-desc">AI triage prioritises all work orders with rationale for the manager</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📊</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">Data Persistence</div>
-                        <div class="about-pattern-desc">Every submission logs a row to Google Sheets via Apps Script</div>
-                    </div>
-                </div>
-                <div class="about-pattern-item">
-                    <div class="about-pattern-icon">📝</div>
-                    <div class="about-pattern-text">
-                        <div class="about-pattern-name">AI Reporting Layer</div>
-                        <div class="about-pattern-desc">Manager generates a shift handover report across all work orders in one click</div>
-                    </div>
-                </div>
-            </div>
+            <button class="p8-about-btn" onclick="p8Show('p8-modal-manager')">ℹ About this screen</button>
         </div>
         <div class="content">
 
@@ -1893,6 +1782,7 @@
                 </div>
                 <div class="status-badge status-in-progress">In Progress</div>
             </div>
+            <button class="p8-about-btn" onclick="p8Show('p8-modal-detail')">ℹ About this screen</button>
         </div>
 
         <!-- Turbine metadata strip -->
@@ -2290,6 +2180,7 @@
     <div id="confirmation-screen" class="screen">
         <div class="header">
             <h1>Submission Confirmed</h1>
+            <button class="p8-about-btn" onclick="p8Show('p8-modal-confirm')">ℹ About this screen</button>
         </div>
         <div class="content">
             <div class="confirmation-icon">✓</div>
@@ -2354,7 +2245,21 @@
     // API KEY — replace with your actual key
     // Do not share this file publicly while the key is present
     // ============================================================
-    const ANTHROPIC_API_KEY = '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'; // Add your Anthropic API key here to enable AI features
+    const ANTHROPIC_API_KEY = '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'; // Add your Anthropic API key here to enable AI features
+
+    // Helper: throws with the real API error message if status is not OK
+    async function checkApiResponse(response) {
+        if (!response.ok) {
+            let errMsg = 'HTTP ' + response.status;
+            try {
+                const errData = await response.json();
+                if (errData.error && errData.error.message) errMsg += ': ' + errData.error.message;
+            } catch (_) {}
+            console.error('[Claude API error]', errMsg);
+            throw new Error(errMsg);
+        }
+        return response;
+    }
 
     // ============================================================
     // GOOGLE DRIVE ENDPOINT
@@ -2365,10 +2270,11 @@
 
     // ============================================================
     // PHASE 3 — CAT 5 ESCALATION EMAIL
-    // Change this to your real email address before a live demo.
-    // This is the recipient of the automated escalation email.
+    // ESCALATION_RECIPIENT: where the draft actually goes (your real inbox)
+    // ESCALATION_DISPLAY: what shows in the UI
     // ============================================================
-    const ESCALATION_RECIPIENT = 'placeholder@placeholder.ca';
+    const ESCALATION_RECIPIENT = 'adrian+dachabaywindfarm@workbenchstrategy.ca';
+    const ESCALATION_DISPLAY   = 'ops.manager@dachabay.ca';
 
     // LEE category labels
     const categoryLabels = {
@@ -2397,12 +2303,6 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         window.scrollTo(0, 0);
-    }
-
-    function toggleAbout(panelId) {
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
-        panel.classList.toggle('open');
     }
 
     function openDetail(woNumber) {
@@ -2789,12 +2689,13 @@
                     "anthropic-dangerous-direct-browser-access": "true"
                 },
                 body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514",
+                    model: "claude-sonnet-4-6",
                     max_tokens: 1000,
                     messages: [{ role: "user", content: prompt }]
                 })
             });
 
+            await checkApiResponse(response);
             const data = await response.json();
             const generatedText = data.content?.[0]?.text || '';
 
@@ -2807,8 +2708,9 @@
                 throw new Error('Empty response');
             }
         } catch (err) {
-            status.textContent = 'Generation failed. Please type your notes manually.';
+            status.textContent = 'Generation failed: ' + err.message;
             status.style.color = '#e53e3e';
+            console.error('[Field Notes]', err);
         }
 
         btn.disabled = false;
@@ -2859,12 +2761,13 @@
                     "anthropic-dangerous-direct-browser-access": "true"
                 },
                 body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514",
+                    model: "claude-sonnet-4-6",
                     max_tokens: 1000,
                     messages: [{ role: "user", content: prompt }]
                 })
             });
 
+            await checkApiResponse(response);
             const data = await response.json();
             const generatedText = data.content?.[0]?.text || '';
 
@@ -2877,8 +2780,9 @@
                 throw new Error('Empty response');
             }
         } catch (err) {
-            status.textContent = 'Generation failed. Please type your notes manually.';
+            status.textContent = 'Generation failed: ' + err.message;
             status.style.color = '#e53e3e';
+            console.error('[Field Notes]', err);
         }
 
         btn.disabled = false;
@@ -3111,7 +3015,7 @@
 
         // Initialise panel in drafting state
         panel.classList.add('sending');
-        toEl.textContent   = 'To: ' + ESCALATION_RECIPIENT;
+        toEl.textContent   = 'To: ' + ESCALATION_DISPLAY;
         badge.textContent  = '⏳ Drafting…';
         subjEl.textContent = 'Generating…';
         prevEl.textContent = 'Claude is drafting the escalation email…';
@@ -3163,7 +3067,7 @@
                     'anthropic-dangerous-direct-browser-access': 'true'
                 },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
+                    model: 'claude-sonnet-4-6',
                     max_tokens: 600,
                     messages: [{ role: 'user', content: prompt }]
                 })
@@ -3235,7 +3139,7 @@ Use "cat1", "cat3", or "cat5" as the category value. If the image does not show 
                     "anthropic-dangerous-direct-browser-access": "true"
                 },
                 body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514",
+                    model: "claude-sonnet-4-6",
                     max_tokens: 200,
                     messages: [{
                         role: "user",
@@ -3247,6 +3151,7 @@ Use "cat1", "cat3", or "cat5" as the category value. If the image does not show 
                 })
             });
 
+            await checkApiResponse(response);
             const data = await response.json();
             const rawText = (data.content?.[0]?.text || '').trim();
 
@@ -3290,9 +3195,10 @@ Use "cat1", "cat3", or "cat5" as the category value. If the image does not show 
 
         } catch (err) {
             // Graceful failure — let tech fill in manually
+            console.error('[Vision]', err);
             const zone = document.getElementById('photo-zone-' + bladeNum);
             const sub = zone.querySelector('.photo-upload-sublabel');
-            if (sub) sub.textContent = 'Analysis failed — please select category manually.';
+            if (sub) sub.textContent = 'Analysis failed (' + err.message + ') — please select category manually.';
         }
 
         // Always hide the analysing indicator
@@ -3643,12 +3549,13 @@ Also include a field "summary" on the FIRST element only — a 2-3 sentence plai
                     'anthropic-dangerous-direct-browser-access': 'true'
                 },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
+                    model: 'claude-sonnet-4-6',
                     max_tokens: 1500,
                     messages: [{ role: 'user', content: prompt }]
                 })
             });
 
+            await checkApiResponse(response);
             const data = await response.json();
             const rawText = data.content?.[0]?.text || '';
 
@@ -3716,7 +3623,8 @@ Also include a field "summary" on the FIRST element only — a 2-3 sentence plai
 
         } catch (err) {
             console.error('Triage error:', err);
-            // Restore button state on error
+            const triagePanel = document.getElementById('triage-panel');
+            if (triagePanel) triagePanel.innerHTML = '<div style="color:#be123c;font-size:14px;padding:12px;">Triage failed: ' + err.message + '</div>';
             if (runBtn) { runBtn.disabled = false; runBtn.innerHTML = '✦ Run AI Triage'; }
             if (retriageBtn) { retriageBtn.disabled = false; retriageBtn.textContent = '✦ Retriage'; }
             summaryBody.innerHTML = '<span style="color:#e53e3e">Triage failed — please try again.</span>';
@@ -3828,12 +3736,13 @@ Write in clear, direct field operations language. Write as if you are the outgoi
                     'anthropic-dangerous-direct-browser-access': 'true'
                 },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
+                    model: 'claude-sonnet-4-6',
                     max_tokens: 1200,
                     messages: [{ role: 'user', content: prompt }]
                 })
             });
 
+            await checkApiResponse(response);
             const data     = await response.json();
             const rawText  = (data.content?.[0]?.text || '').trim();
 
@@ -3902,7 +3811,7 @@ Write in clear, direct field operations language. Write as if you are the outgoi
 
         } catch (err) {
             console.error('Shift report error:', err);
-            bodyEl.innerHTML = '<div style="color:#be123c;font-size:14px;">Report generation failed — please try again.</div>';
+            bodyEl.innerHTML = '<div style="color:#be123c;font-size:14px;">Report generation failed: ' + err.message + '</div>';
         }
 
         // Restore button states
@@ -3943,7 +3852,115 @@ Write in clear, direct field operations language. Write as if you are the outgoi
             .replace(/"/g, '&quot;');
     }
 
+    // ── Phase 8: About This Screen modals ──
+    function p8Show(id) {
+        document.getElementById(id).classList.add('p8-open');
+    }
+
+    function p8Hide(id) {
+        document.getElementById(id).classList.remove('p8-open');
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.p8-overlay.p8-open').forEach(function(m) {
+                m.classList.remove('p8-open');
+            });
+        }
+    });
 
 </script>
+    <!-- ============================================================ -->
+    <!-- PHASE 8 — ABOUT THIS SCREEN MODALS                          -->
+    <!-- ============================================================ -->
+
+    <!-- Modal: Screen 1 — Work Order List -->
+    <div id="p8-modal-list" class="p8-overlay">
+        <div class="p8-modal">
+            <div class="p8-modal-hdr">
+                <h2>About This Screen</h2>
+                <button class="p8-modal-close" onclick="p8Hide('p8-modal-list')">✕</button>
+            </div>
+            <div class="p8-modal-body">
+                <p class="p8-intro">Field operations dashboard. Each card shows the turbine number, job type, and current status for active work orders at Dacha Bay Wind Farm.</p>
+                <p class="p8-intro">WO-2847 is the live demo. Click it to walk through the full workflow.</p>
+                <div class="p8-patterns">Patterns: multi-screen workflow, status tracking, human-in-the-loop design.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Screen 2 — Work Order Detail -->
+    <div id="p8-modal-detail" class="p8-overlay">
+        <div class="p8-modal">
+            <div class="p8-modal-hdr">
+                <h2>About This Screen</h2>
+                <button class="p8-modal-close" onclick="p8Hide('p8-modal-detail')">✕</button>
+            </div>
+            <div class="p8-modal-body">
+                <p class="p8-intro">The technician's field form. Each section maps to a real AI implementation pattern:</p>
+                <div class="p8-feature">
+                    <strong>Progress Tracker</strong>
+                    <p>Gates submission until all required fields are complete. Nothing can be skipped.</p>
+                </div>
+                <div class="p8-feature">
+                    <strong>Photo Upload + AI Vision</strong>
+                    <p>Upload a blade photo and Claude reads the visible damage and pre-fills the erosion category. To test it, download a real photo from Wikimedia Commons: <a href="https://commons.wikimedia.org/wiki/Special:FilePath/Leading_edge_damage_-_windturbine.jpg" target="_blank">Leading edge damage (876x657 jpg)</a>.</p>
+                </div>
+                <div class="p8-feature">
+                    <strong>LEE Assessment</strong>
+                    <p>Structured data capture. Damage category and erosion length per blade. This data feeds the field notes generator.</p>
+                </div>
+                <div class="p8-feature">
+                    <strong>✦ Generate Draft Notes</strong>
+                    <p>Calls the Claude API live, reads everything the technician filled in, and writes a professional field report. The output is editable before submission.</p>
+                </div>
+                <div class="p8-feature">
+                    <strong>Cat 5 Auto-Escalation</strong>
+                    <p>If any blade is flagged Cat 5, the system drafts an escalation email in the connected Gmail account, ready to review and send.</p>
+                </div>
+                <div class="p8-patterns">Patterns: multimodal AI input (vision), AI text generation, structured data capture, condition-triggered automation, editable AI output.</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal: Screen 4 — Confirmation -->
+    <div id="p8-modal-confirm" class="p8-overlay">
+        <div class="p8-modal">
+            <div class="p8-modal-hdr">
+                <h2>About This Screen</h2>
+                <button class="p8-modal-close" onclick="p8Hide('p8-modal-confirm')">✕</button>
+            </div>
+            <div class="p8-modal-body">
+                <p class="p8-intro">Submission complete. The structured form data is packaged as a JSON payload and sent to a Google Apps Script endpoint, which writes it to Google Drive. Blade photos from the inspection are saved to the same folder, organized by work order number.</p>
+                <p class="p8-intro">Open Google Drive in a second tab and refresh after submitting. The folder, the JSON file, and any uploaded photos appear in real time.</p>
+                <div class="p8-patterns">Patterns: structured output, API integration, data persistence, end-to-end workflow.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Manager Dashboard -->
+    <div id="p8-modal-manager" class="p8-overlay">
+        <div class="p8-modal">
+            <div class="p8-modal-hdr">
+                <h2>About This Screen</h2>
+                <button class="p8-modal-close" onclick="p8Hide('p8-modal-manager')">✕</button>
+            </div>
+            <div class="p8-modal-body">
+                <p class="p8-intro">The site manager's view. Read-only overview of all active work orders across the wind farm: turbine, job type, technician, and current status.</p>
+                <div class="p8-feature">
+                    <strong>✦ Run AI Triage</strong>
+                    <p>Sends all open work orders to the Claude API in a single call. Claude returns a ranked priority list (P1 through P4) with a rationale for each. The output is advisory only. No work orders are modified automatically.</p>
+                </div>
+                <div class="p8-feature">
+                    <strong>✦ Generate Shift Report</strong>
+                    <p>Compiles all work orders into a structured end-of-shift summary written in plain language. The report is editable before it is sent or saved.</p>
+                </div>
+                <div class="p8-patterns">Patterns: AI decision support, batch structured output, stateless triage, AI document generation, human-in-the-loop.</div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

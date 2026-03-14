@@ -2245,7 +2245,8 @@
     // API KEY — replace with your actual key
     // Do not share this file publicly while the key is present
     // ============================================================
-    const ANTHROPIC_API_KEY = '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'; // Add your Anthropic API key here to enable AI features
+    // AI calls route through /.netlify/functions/claude (serverless proxy).
+    // The Anthropic API key lives in Netlify environment variables — not here.
 
     // Helper: throws with the real API error message if status is not OK
     async function checkApiResponse(response) {
@@ -2680,14 +2681,9 @@
         const prompt = 'You are a wind turbine field technician writing a concise work order field note after completing a blade inspection on Turbine T-142 (Work Order WO-2847) at Dacha Bay Wind Farm.\n\nInspection data collected:\n' + bladeDescriptions + '\nPhoto documentation: ' + (photoDone ? 'captured' : 'not yet captured') + '\n\nWrite a professional, plain-language field note (3-5 sentences) summarising:\n1. What was inspected and completed\n2. The erosion findings per blade with urgency implications\n3. A clear recommended next action based on the worst category found\n\nUse direct, field-report language. No bullet points. Write in first person past tense as the technician.';
 
         try {
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
+            const response = await fetch("/.netlify/functions/claude", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "anthropic-dangerous-direct-browser-access": "true"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "claude-sonnet-4-6",
                     max_tokens: 1000,
@@ -2752,14 +2748,9 @@
         const prompt = 'You are a wind turbine field technician writing a concise work order field note after completing routine maintenance on Turbine T-156 (Work Order WO-2851) at Dacha Bay Wind Farm.\n\nCompleted tasks:\n' + completedList + '\n\nPending tasks:\n' + pendingList + '\n\nWrite a professional, plain-language field note (3-5 sentences) summarising:\n1. What maintenance was completed\n2. Any notable findings (e.g. fluid condition, wear levels, anything outside normal parameters)\n3. Recommended follow-up if any tasks are pending, or confirmation that the turbine is cleared for return to service if all tasks are done\n\nUse direct, field-report language. No bullet points. Write in first person past tense as the technician. If all tasks are complete, confirm the turbine is ready to return to operation.';
 
         try {
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
+            const response = await fetch("/.netlify/functions/claude", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "anthropic-dangerous-direct-browser-access": "true"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "claude-sonnet-4-6",
                     max_tokens: 1000,
@@ -3058,14 +3049,9 @@
 
         try {
             // ── Step 1: Generate email body via Claude API ──────────────
-            const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            const claudeResponse = await fetch('/.netlify/functions/claude', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01',
-                    'anthropic-dangerous-direct-browser-access': 'true'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'claude-sonnet-4-6',
                     max_tokens: 600,
@@ -3130,14 +3116,9 @@ Respond ONLY with a valid JSON object in this exact format, nothing else:
 Use "cat1", "cat3", or "cat5" as the category value. If the image does not show a wind turbine blade or damage is not visible, use "cat1" and note that in the rationale.`;
 
         try {
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
+            const response = await fetch("/.netlify/functions/claude", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "anthropic-dangerous-direct-browser-access": "true"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "claude-sonnet-4-6",
                     max_tokens: 200,
@@ -3540,14 +3521,9 @@ Return ONLY a valid JSON array with no other text, markdown, or explanation. Eac
 Also include a field "summary" on the FIRST element only — a 2-3 sentence plain-language paragraph explaining the overall triage logic for the dispatcher.`;
 
         try {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const response = await fetch('/.netlify/functions/claude', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01',
-                    'anthropic-dangerous-direct-browser-access': 'true'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'claude-sonnet-4-6',
                     max_tokens: 1500,
@@ -3727,14 +3703,9 @@ The 3 most important actions for the next shift to act on, in order of urgency. 
 Write in clear, direct field operations language. Write as if you are the outgoing site manager writing for the incoming manager. No greeting, no sign-off.`;
 
         try {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const response = await fetch('/.netlify/functions/claude', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01',
-                    'anthropic-dangerous-direct-browser-access': 'true'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'claude-sonnet-4-6',
                     max_tokens: 1200,
